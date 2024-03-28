@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
+
+        <title>GSEAWrap</title>
+
+        <link rel="stylesheet" type="text/css" href="../styles.css" />
+    </head>
+    <body>
+        <form>
+            <label for="gene_sets">Gene sets database</label>
+            <input type="file" accept=".gmt, .gmx" name="gene_sets" id="gene_sets" />
+            
+            <label for="num_permutations">Number of permutations</label>
+            <input type="number" value="1000" name="num_permutations" id="num_permutations" />
+            
+            <label for="ranked_list">Ranked list</label>
+            <input type="file" accept=".rnk" name="ranked_list" id="ranked_list" />
+            
+            <fieldset>
+                <legend>Collapse/Remap to gene symbols</legend>
+                <input type="radio" id="collapse" name="collaps_remap" value="collapse" />
+                <label for="collapse">Collapse</label>
+
+                <input type="radio" id="remap" name="collaps_remap" value="remap" />
+                <label for="remap">Remap</label>
+
+                <input type="radio" id="none" name="collaps_remap" value="none" checked />
+                <label for="none">Do nothing</label>
+            </fieldset>
+            
+            <label for="chip">Chip platform</label>
+            <input type="file" accept=".chip" name="chip" id="chip" />
+			
+            <button type="button" id="submit">Submit</button>
+        </form>
+        
+		<pre id="log"></pre>
+    </body>
+
+    <script src="../renderer_src/main_renderer.js"></script> 
+</html>
