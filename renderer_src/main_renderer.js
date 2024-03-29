@@ -13,5 +13,5 @@ submitBtn.addEventListener("click", (event) => {
     const collapseRemapOption = document.querySelector('[name="collaps_remap"]:checked').value
     const chipPath = chipObj.files[0].path
 
-    window.electronAPI.sendDataPreranked(geneSetsPath, rankedListPath, chipPath)
+    window.electronAPI.sendDataPreranked(geneSetsPath, numPermutations, rankedListPath, collapseRemapOption, chipPath)
 })

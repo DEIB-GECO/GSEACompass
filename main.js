@@ -11,17 +11,19 @@ const createMainWindow = () => {
         }
     })
 
-    ipcMain.on('send-data-preranked', (event, geneSetsPath, rankedListPath, chipPath) => {
-        const pythonProcess = spawn('python3', ['backend_src/gsea_preranked.py', geneSetsPath, rankedListPath, chipPath])
+    ipcMain.on('send-data-preranked', (event, geneSetsPath, numPermutations, rankedListPath, collapseRemapOption, chipPath) => {
         
-        let result = ''
+        const pythonProcess = spawn('python3', ['backend_src/gsea_preranked.py',
+            geneSetsPath, numPermutations, rankedListPath, collapseRemapOption, chipPath])
+        
+        let rawJsonData = ''
 
         pythonProcess.stdout.on('data', (data) => {
-            result += data
+            rawJsonData += data
         })
 
         pythonProcess.stdout.on('end', (data) => {
-            createTableWindow(result)
+            createTableWindow(rawJsonData)
         })
     })
 
