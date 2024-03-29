@@ -1,41 +1,35 @@
-function createTable(jsonData, containerSelector) {
-    const table = document.createElement('table');
-    const tableHead = document.createElement('thead');
-    const tableBody = document.createElement('tbody');
-
-    table.id = "dataTable"
-
-    // Append the table head and body to table
-    table.appendChild(tableHead);
-    table.appendChild(tableBody);
-
-    // Creating table head
-    let row = tableHead.insertRow();
-    Object.keys(jsonData[0]).forEach(key => {
-        let th = document.createElement('th');
-        th.textContent = key.toUpperCase();
-        row.appendChild(th);
-    });
-
-    // Creating table body
-    jsonData.forEach(item => {
-    let row = tableBody.insertRow();
-        Object.values(item).forEach(value => {
-            let cell = row.insertCell();
-            cell.textContent = value;
-        });
-    });
-
-    // Append the table to the HTML document
-    document.querySelector(containerSelector).appendChild(table);
-}
-
 window.electronAPI.requestJsonData()
 
 window.electronAPI.onJsonData((rawJsonData) => {
     jsonData = JSON.parse(rawJsonData)
 
-    createTable(jsonData, "#dataDiv")
-
-    let table = new DataTable('#dataTable', {});
+    let table = new DataTable('#dataTable', {
+        data: jsonData,
+        columns: [
+            { data: 'Term', title: 'Term' },
+            { data: 'ES', title: 'ES' },
+            { data: 'NES', title: 'NES' },
+            { data: 'NOM p-val', title: 'NOM p-val' },
+            { data: 'FDR q-val', title: 'FDR q-val' },
+            { data: 'FWER p-val', title: 'FWER p-val' },
+            { data: 'Gene %', title: 'Gene %' },
+            { data: 'Tag %', title: 'Tag %' },
+            { data: 'Lead_genes', title: 'Lead_genes' }
+        ],
+        columnDefs: [{
+            targets: 0,
+            render: DataTable.render.ellipsis(17) 
+        }],
+        responsive: true,
+        select: true,
+        fixedHeader: true,
+        colReorder: true,
+        scrollX: true,
+        layout: {
+            bottomoStart: 'buttons'
+        },
+        buttons: [ 'copy', 'excel', 'pdf' ]
+    });
 })
+
+
