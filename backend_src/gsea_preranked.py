@@ -1,8 +1,8 @@
 import sys
-
 import pandas as pd
 import matplotlib.pyplot as plt
 import gseapy as gp
+import dill
 
 # Read arguments passed on the script call
 gene_sets_path = sys.argv[1]
@@ -36,3 +36,6 @@ res_json = pre_res.res2d.to_json(orient="records")
 print(res_json)
 
 sys.stdout.flush()
+
+# Save the python session on a file
+dill.dump_session("gsea_run.pkl")

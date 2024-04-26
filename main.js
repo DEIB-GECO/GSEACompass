@@ -1,6 +1,9 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron')
 const { spawn } = require('child_process')
 const path = require('node:path')
+const sizeOf = require('image-size')
+
+
 
 const createMainWindow = () => {
     const mainWindow = new BrowserWindow({
@@ -43,11 +46,37 @@ const createTableWindow = (jsonRawData) => {
         tableWindow.webContents.send('send-json-data', jsonRawData)
     })
 
+    ipcMain.on('request-plot', (event, selectedTerms) => {
+        const pythonProcess = spawn('python3', ['backend_src/gsea_plot.py', selectedTerms])
+
+        pythonProcess.stdout.on('end', () => {
+            createPlotWindow(800, 600)
+        })
+    })
+
+    tableWindow.maximize()
+    
     tableWindow.loadFile('web_pages/table.html')
 }
 
+const createPlotWindow = (customWidth, customHeight) => {
+    const plotWindow = new BrowserWindow({
+        width: customWidth,
+        height: customHeight,
+        autoHideMenuBar: true
+    })
+
+    plotWindow.loadFile('web_pages/plot.html')
+}
+
 app.whenReady().then(() => {
-    createMainWindow()
+    // ### Debug ###
+    var fs = require('fs')
+    var data = fs.readFileSync('../test_data/test_result.json', 'utf8')
+    createTableWindow(data)
+    // ### ### ###
+
+    // createMainWindow()
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) 

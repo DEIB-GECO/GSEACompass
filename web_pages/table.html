@@ -3,15 +3,18 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <title>GSEAWrap</title>
-
-        <link href="../ext_dependencies/datatables/datatables.min.css" rel="stylesheet">
+        
+        <link href="../ext_dependencies/datatables/datatables.min.css" rel="stylesheet" />
         <script src="../ext_dependencies/datatables/datatables.min.js"></script>
+        <script src="../ext_dependencies/ellipsis.js"></script>
     </head>
-    <body>
-        <div id="dataDiv"></div>
+    <body class="">
+        <div id="dataDiv" class="m-3">
+            <table id="dataTable" class="table table-striped" style="width:100%"></table>
+        </div>
 
         <script src="../renderer_src/table_renderer.js"></script>
     </body>
