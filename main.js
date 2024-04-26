@@ -3,8 +3,6 @@ const { spawn } = require('child_process')
 const path = require('node:path')
 const sizeOf = require('image-size')
 
-
-
 const createMainWindow = () => {
     const mainWindow = new BrowserWindow({
         width: 800,
@@ -14,9 +12,9 @@ const createMainWindow = () => {
         }
     })
 
-    ipcMain.on('send-data-preranked', (event, geneSetsPath, numPermutations, rankedListPath, collapseRemapOption, chipPath) => {
+    ipcMain.on('send-data-preranked', (_event, geneSetsPath, numPermutations, rankedListPath, collapseRemapOption, chipPath) => {
         
-        const pythonProcess = spawn('python3', ['backend_src/gsea_preranked.py',
+        const pythonProcess = spawn('python', ['backend_src/gsea_preranked.py',
             geneSetsPath, numPermutations, rankedListPath, collapseRemapOption, chipPath])
         
         let rawJsonData = ''
@@ -25,7 +23,7 @@ const createMainWindow = () => {
             rawJsonData += data
         })
 
-        pythonProcess.stdout.on('end', (data) => {
+        pythonProcess.stdout.on('end', (_data) => {
             createTableWindow(rawJsonData)
         })
     })
@@ -42,14 +40,14 @@ const createTableWindow = (jsonRawData) => {
         }
     })
 
-    ipcMain.on('request-json-data', (event) => {
+    ipcMain.on('request-json-data', (_event) => {
         tableWindow.webContents.send('send-json-data', jsonRawData)
     })
 
-    ipcMain.on('request-plot', (event, selectedTerms) => {
-        const pythonProcess = spawn('python3', ['backend_src/gsea_plot.py', selectedTerms])
+    ipcMain.on('request-plot', (_event, selectedTerms) => {
+        const pythonProcess = spawn('python', ['backend_src/gsea_plot.py', selectedTerms])
 
-        pythonProcess.stdout.on('end', () => {
+        pythonProcess.stdout.on('end', (_data) => {
             createPlotWindow(800, 600)
         })
     })
