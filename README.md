@@ -6,45 +6,50 @@ A minimalistic yet powerful app to run *GSEA*, pre-ranked *GSEA* and *ssGSEA* an
 
 - [Frameworks](#frameworks)
 - [Run instructions](#run-instructions)
-  - [Dependencies](#dependecies)
-  - [Download and run](#download-and-run)
+  - [Download](#download)
+  - [Dependencies](#run-dependencies)
 - [Build instructions](#build-instructions)
-  - [Dependencies](#dependencies)
+  - [Dependencies](#build-dependencies)
   - [Build and run](#build-and-run)
 
 ## Frameworks
 
-This tool is powered by:
+This tool is super-powered by:
 
-- *GSEApy* on the python backend to run genomic analysises and graphical elaborations
+- *GSEApy* on the python backend to run genomic analyses and graphical elaborations
 - *Electron.js* on the desktop frontend
 - *Datatables.js* as a view engine for post-analysis tables
 
 ## Run instructions
 
-### Dependencies
+### Download
 
-#### Python3 and pip
+Download the latest stable version of GSEAWrap from the [releases page](https://github.com/DEIB-GECO/GSEAWrap/releases).
 
-Python3 and pip need to be installed on your machine to use GSEAWrap, follow the official guides to install them.
+### Run dependencies
 
 #### Rust
 
-The Rust development environment has to be installed on your machine, since it's compulsory to install and run gseapy
+The Rust development environment has to be installed on your machine, since it's compulsory to install and run GSEApy.
+Follow this [link](https://www.rust-lang.org/tools/install) for the official instructions to download and install it.
 
-#### Pip dependecies
+#### Python
 
-These pip-based dependencies need to be fullfilled too: dill, pandas, matplotlib, gseapy.
-Install them with the following command:
-`pip install --user XXXX` where XXXX is dill/pandas/ecc..
+Python3.12 and pip must be installed too, follow the official guides to install them ([python one](https://www.python.org/downloads/), [pip one](https://pypi.org/project/pip/)).
 
-### Download and run
+#### Python libraries
 
-Once the run-time dependencies are installed, just download the latest stable version (based on your OS) and run it.
+Once Python and pip are installed, open the directory in which you have unzipped the GSEAWrap archive and run the command:
+
+```bash
+pip install -r requirements.txt
+```
+
+This will install all python-based dependencies needed to run the app.
 
 ## Build instructions
 
-### Dependecies
+### Build dependencies
 
 #### Node.js
 
@@ -52,15 +57,22 @@ Mind that Node.js is required to be installed on you system in order to build an
 Moreover, as suggested on the official Electron.js website:
 > Please install Node.js using pre-built installers for your platform. You may encounter incompatibility issues with different development tools otherwise.
 >
+Follow the [official guide](https://nodejs.org/en/download) to install it.
 
 #### Npm dependencies
 
-Once installed Node.js, all npm-based dependencies can be installed with the following command, make sure to be in the repository directory:
-`npm install`
+Once installed Node.js, all npm-based dependencies can be installed with the following command, make sure to be in your local repository directory:
+
+```bash
+npm install
+```
 
 ### Build and run
 
 To build and run the application just run the following command, make sure to be in the repository directory:
-`npm start`
 
-In order to run the app be sure to have installed the run dependencies too (see [up above](#run-dependencies)).
+```bash
+npm start
+```
+
+In order to run the app, be sure to have installed the run dependencies too (see [up above](#run-dependencies)).
