@@ -30,10 +30,10 @@ const createMainWindow = () => {
     })
 
     ipcMain.on('send-data-preranked', (_event, geneSetsPath, numPermutations, rankedListPath, collapseRemapOption, chipPath) => {
-        
-        const pythonProcess = spawn('python', ['backend_src/gsea_preranked.py',
+
+        const pythonProcess = spawn('venv/bin/python3.12', ['backend_src/gsea_preranked.py',
             geneSetsPath, numPermutations, rankedListPath, collapseRemapOption, chipPath])
-        
+
         let rawJsonData = ''
 
         pythonProcess.stdout.on('data', (data) => {
@@ -73,7 +73,7 @@ const createTableWindow = (jsonRawData) => {
     })
 
     ipcMain.on('request-enrichment-plot', (_event, selectedTerms) => {
-        const pythonProcess = spawn('python', ['backend_src/gsea_plot.py', 'enrichment-plot', selectedTerms])
+        const pythonProcess = spawn('venv/bin/python3.12', ['backend_src/gsea_plot.py', 'enrichment-plot', selectedTerms])
 
         pythonProcess.stdout.on('end', (_data) => {
             createPlotWindow(800, 600)
@@ -93,7 +93,7 @@ const createTableWindow = (jsonRawData) => {
     })
 
     ipcMain.on('request-dotplot', (_event, selectedColumn) => {
-        const pythonProcess = spawn('python', ['backend_src/gsea_plot.py', 'dotplot', selectedColumn])
+        const pythonProcess = spawn('venv/bin/python3.12', ['backend_src/gsea_plot.py', 'dotplot', selectedColumn])
 
         pythonProcess.stdout.on('end', (_data) => {
             createPlotWindow(800, 600)
@@ -110,11 +110,11 @@ const createTableWindow = (jsonRawData) => {
             if (stderrContent.length !== 0)
                 exitOnFail("The app failed while computing the plot", stderrContent)
         })
-    
+
     })
 
     tableWindow.maximize()
-    
+
     tableWindow.loadFile('web_pages/table.html')
 }
 
@@ -138,12 +138,12 @@ app.whenReady().then(() => {
     // createMainWindow()
 
     app.on('activate', () => {
-        if (BrowserWindow.getAllWindows().length === 0) 
+        if (BrowserWindow.getAllWindows().length === 0)
             createMainWindow()
     })
 })
 
 app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') 
+    if (process.platform !== 'darwin')
         app.quit()
 })
