@@ -1,6 +1,24 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron')
 const { spawn } = require('child_process')
 const path = require('node:path')
+const notifier = require('node-notifier')
+const log = require('electron-log/main')
+
+log.transports.file.level = 'error'
+log.transports.file.resolvePathFn = () => path.join(__dirname, 'GSEAWrap_logs/error.log')
+
+const exitOnFail = (info, error) => {
+    console.log(info + error);
+    log.error(info + error)
+
+    notifier.notify({
+        title: 'GSEAWrap failed',
+        message: info + ', you can find the log in err_log.txt',
+        wait: true
+    })
+
+    app.exit(-1)
+}
 
 const createMainWindow = () => {
     const mainWindow = new BrowserWindow({
@@ -21,9 +39,20 @@ const createMainWindow = () => {
         pythonProcess.stdout.on('data', (data) => {
             rawJsonData += data
         })
-
         pythonProcess.stdout.on('end', (_data) => {
             createTableWindow(rawJsonData)
+        })
+
+        let stderrChunks = []
+
+        pythonProcess.stderr.on('data', (data) => {
+            stderrChunks = stderrChunks.concat(data);
+        })
+        pythonProcess.stderr.on('end', (_data) => {
+            let stderrContent = Buffer.concat(stderrChunks).toString();
+
+            if (stderrContent.length !== 0)
+                exitOnFail("The app failed while computing the preranked analysis", stderrContent)
         })
     })
 
@@ -49,12 +78,39 @@ const createTableWindow = (jsonRawData) => {
         pythonProcess.stdout.on('end', (_data) => {
             createPlotWindow(800, 600)
         })
+
+        let stderrChunks = []
+
+        pythonProcess.stderr.on('data', (data) => {
+            stderrChunks = stderrChunks.concat(data);
+        })
+        pythonProcess.stderr.on('end', (_data) => {
+            let stderrContent = Buffer.concat(stderrChunks).toString();
+
+            if (stderrContent.length !== 0)
+                exitOnFail("The app failed while computing the plot", stderrContent)
+        })
     })
+
     ipcMain.on('request-dotplot', (_event, selectedColumn) => {
         const pythonProcess = spawn('python', ['backend_src/gsea_plot.py', 'dotplot', selectedColumn])
 
         pythonProcess.stdout.on('end', (_data) => {
             createPlotWindow(800, 600)
+        })
+
+        let stderrChunks = []
+
+        pythonProcess.stderr.on('data', (data) => {
+            stderrChunks = stderrChunks.concat(data);
+        })
+        pythonProcess.stderr.on('end', (_data) => {
+            let stderrContent = Buffer.concat(stderrChunks).toString();
+
+            if (stderrContent.length !== 0)
+                exitOnFail("The app failed while computing the plot", stderrContent)
+        })
+    
     })
 
     tableWindow.maximize()
