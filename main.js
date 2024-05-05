@@ -1,7 +1,6 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron')
 const { spawn } = require('child_process')
 const path = require('node:path')
-const sizeOf = require('image-size')
 
 const createMainWindow = () => {
     const mainWindow = new BrowserWindow({
@@ -44,12 +43,18 @@ const createTableWindow = (jsonRawData) => {
         tableWindow.webContents.send('send-json-data', jsonRawData)
     })
 
-    ipcMain.on('request-plot', (_event, selectedTerms) => {
-        const pythonProcess = spawn('python', ['backend_src/gsea_plot.py', selectedTerms])
+    ipcMain.on('request-enrichment-plot', (_event, selectedTerms) => {
+        const pythonProcess = spawn('python', ['backend_src/gsea_plot.py', 'enrichment-plot', selectedTerms])
 
         pythonProcess.stdout.on('end', (_data) => {
             createPlotWindow(800, 600)
         })
+    })
+    ipcMain.on('request-dotplot', (_event, selectedColumn) => {
+        const pythonProcess = spawn('python', ['backend_src/gsea_plot.py', 'dotplot', selectedColumn])
+
+        pythonProcess.stdout.on('end', (_data) => {
+            createPlotWindow(800, 600)
     })
 
     tableWindow.maximize()

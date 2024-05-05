@@ -36,19 +36,39 @@ window.electronAPI.onJsonData((rawJsonData) => {
                 buttons: [
                     {
                         text: 'Generate plot',
-                        action: () => {
-                            // Fetch the selected rows
-                            let selectedRows = table.rows({selected: true}).data()
-                            let numSelectedRows = selectedRows.length
+                        buttons: [
+                            {   // First button
+                                text: 'Enrichment plot',
+                                name: 'enrichmentPlot',
+                                enabled: false,
+                                action: () => {
+                                    // Fetch the selected rows
+                                    let selectedRows = table.rows({selected: true}).data()
+                                    let numSelectedRows = selectedRows.length
 
-                            // Put each selected rows Term field in an array
-                            let selectedTerms = []
-                            for (let i = 0; i < numSelectedRows; i++)
-                                selectedTerms[i]= selectedRows[i].Term
+                                    // Put each selected rows Term field in an array
+                                    let selectedTerms = []
+                                    for (let i = 0; i < numSelectedRows; i++)
+                                        selectedTerms[i] = selectedRows[i].Term
 
-                            // Send the selected terms in JSON format
-                            window.electronAPI.requestPlot(JSON.stringify(selectedTerms))
-                        }
+                                    // Send the selected terms in JSON format
+                                    window.electronAPI.requestEnrichmentPlot(JSON.stringify(selectedTerms))
+                                }
+                            },
+                            {
+                                text: 'Dotplot',
+                                name: 'dotplot',
+                                enabled: false,
+                                action: () => {
+                                    // Fetch the selected column title (e.g FDR q-val)
+                                    let selectedColumn = table.columns({selected: true}).titles()[0]
+
+                                    // Send the selected column title in JSON format
+                                    window.electronAPI.requestDotplot(selectedColumn)
+                                }
+                            }
+                        ]
+                    },
                     }
                 ]
             },

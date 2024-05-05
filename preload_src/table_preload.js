@@ -3,5 +3,6 @@ const { contextBridge, ipcRenderer } = require('electron')
 contextBridge.exposeInMainWorld('electronAPI', {
     onJsonData: (callback) => ipcRenderer.on('send-json-data', (_event, jsonData) => callback(jsonData)),
     requestJsonData: () => ipcRenderer.send('request-json-data'),
-    requestPlot: (selectedTerms) => ipcRenderer.send('request-plot', selectedTerms)
+    requestEnrichmentPlot: (selectedTerms) => ipcRenderer.send('request-enrichment-plot', selectedTerms),
+    requestDotplot: (selectedColumn) => ipcRenderer.send('request-dotplot', selectedColumn)
 })
