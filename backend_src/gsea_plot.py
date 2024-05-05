@@ -16,18 +16,19 @@ selected_terms = pd.read_json(StringIO(selected_terms_raw))[0]
 dill.load_session("gsea_run.pkl")
 
 if len(selected_terms) == 1:
-    plot = gseaplot(rank_metric=pre_res.ranking, 
-                    term=selected_terms[0],
-                    ofname='plots/gsea_plot.png',
-                    **pre_res.results[selected_terms[0]])
+    gseaplot(rank_metric=pre_res.ranking, 
+             term=selected_terms[0],
+             figsize=(4,5),
+             ofname='plots/gsea_plot.png',
+             **pre_res.results[selected_terms[0]])
 else:
     hits = [pre_res.results[t]['hits'] for t in selected_terms]
     runes = [pre_res.results[t]['RES'] for t in selected_terms]
 
-    plot = gseaplot2(terms=selected_terms, 
-                     RESs=runes, 
-                     hits=hits,
-                     rank_metric=pre_res.ranking,
-                     legend_kws={'loc': (1.2, 0)}, 
-                     figsize=(4,5),
-                     ofname='plots/gsea_plot.png')
+    gseaplot2(terms=selected_terms, 
+              RESs=runes, 
+              hits=hits,
+              rank_metric=pre_res.ranking,
+              legend_kws={'loc': (0, -1)}, 
+              figsize=(4,5),
+              ofname='plots/gsea_plot.png')
