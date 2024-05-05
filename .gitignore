@@ -1,0 +1,8 @@
+gsea_run.pkl
+
+/node_modules
+/plots
+/backend_src/__pycache_
+/.vscode
+/GSEAWrap_logs
+/venv
