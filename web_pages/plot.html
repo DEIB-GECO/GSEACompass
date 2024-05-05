@@ -4,8 +4,29 @@
     <head>
         <meta charset="UTF-8">
         <title>GSEAWrap</title>
+        
+        <script src="../dependencies/panzoom/panzoom.min.js"></script>
+        <style>
+           * {
+            margin: 0;
+            padding: 0;
+        }
+        .imgbox {
+            display: grid;
+            height: 100%;
+        }
+        .center-fit {
+            max-width: 100%;
+            max-height: 100vh;
+            margin: auto;
+        }
+        </style>
     </head>
     <body>
-        <img src="../plots/gsea_plot.png" />
+        <div class="imgbox">
+            <img src="../plots/gsea_plot.png" id="panzoom-img" class="center-fit" />
+        </div>
     </body>
+
+    <script src="../renderer_src/plot_renderer.js"></script>
 </html>
