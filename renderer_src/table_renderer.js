@@ -1,5 +1,18 @@
 window.electronAPI.requestJsonData()
 
+// Function applied to each column to verify whether it should be exported or not
+// Returns true if the current column should be exported, otherwise false
+let exportColSelector = (idx, data, node) =>  {
+    // If one or more columns have been selected
+    if (table.columns({ selected: true }).header().length > 0)
+        // Return true (export) iff the current considered column is selected AND it's not the first one (checkbox)
+        return table.column(idx).selected() && idx != 0
+    // If no column has been selected
+    else
+        // Return true (export) for all columns except the first one (checkbox)
+        return idx != 0;
+}
+
 let table = ''
 
 window.electronAPI.onJsonData((rawJsonData) => {
@@ -8,6 +21,7 @@ window.electronAPI.onJsonData((rawJsonData) => {
     table = new DataTable('#dataTable', {
         data: jsonData,
         columns: [
+            { data: null, defaultContent: ''},
             { data: 'Term', title: 'Term' },
             { data: 'ES', title: 'ES' },
             { data: 'NES', title: 'NES' },
@@ -20,21 +34,34 @@ window.electronAPI.onJsonData((rawJsonData) => {
         ],
         columnDefs: [
             { 
-                // Enable ellipsis truncation on first and last column (term and lead_genes)
-                targets: [0, 8], 
-                render: DataTable.render.ellipsis(30) 
+                // Enable ellipsis truncation on first and last data columns (term and lead_genes)
+                targets: [1, 9], 
+                render: DataTable.render.ellipsis(25)
+            },
+            {
+                // Enable checkbox for rows selection on first column (empty one at index 0)
+                targets: 0,
+                render: DataTable.render.select()
             }
         ],
         // responsive: true,
         select: {
-            style: 'os'
+            style: 'multi',
+            selector: 'td, th'
         },
         fixedHeader: true,
         colReorder: true,
         layout: {
+            top2Start: {
+                pageLength: {
+                    menu: [ 10, 25, 50, 100, 300 ]
+                }
+            },
             topStart: {
+                // Drop down button to generate plots
                 buttons: [
                     {
+                        extend: 'collection',
                         text: 'Generate plot',
                         buttons: [
                             {   // First button
@@ -69,11 +96,58 @@ window.electronAPI.onJsonData((rawJsonData) => {
                             }
                         ]
                     },
+                    {
+                        extend: 'collection',
+                        text: 'Selection options',
+                        buttons: ['selectAll', 'selectNone', 'selectRows', 'selectColumns']
                     }
                 ]
             },
-            bottomoStart: 'buttons'
+            bottomStart: {
+                 buttons: [
+                    {
+                        extend: 'collection',
+                        text: 'Export',
+                        enabled: false,
+                        name: 'export',
+                        buttons: [
+                            {
+                                extend: 'copy',
+                                exportOptions: {
+                                    columns: exportColSelector,
+                                    orthogonal: 'export'
+                                }
+                            },
+                            {
+                                extend: 'csv',
+                                exportOptions: {
+                                    columns: exportColSelector,
+                                    orthogonal: 'export'
+                                }
+                            },
+                            {
+                                extend: 'excel',
+                                exportOptions: {
+                                    columns: exportColSelector,
+                                    orthogonal: 'export'
+                                }
+                            }
+                        ]
+                    },
+                    'colvis'
+                 ]
+            }
         }
+    })
+
+    // Every time a rows/column has been selected or deselected
+    table.on('select deselect', () => {
+        var selectedRows = table.rows({ selected: true }).count()
+        var selectedColumns = table.columns({ selected: true }).count()
+     
+        table.button(['export:name']).enable(selectedRows > 0 || selectedColumns > 0)
+        table.button(['enrichmentPlot:name']).enable(selectedRows > 0 && selectedColumns === 0)
+        table.button(['dotplot:name']).enable(selectedRows === 0 && selectedColumns === 1)
     })
 })
 
