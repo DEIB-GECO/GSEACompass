@@ -2,7 +2,7 @@ window.electronAPI.requestJsonData()
 
 // Function applied to each column to verify whether it should be exported or not
 // Returns true if the current column should be exported, otherwise false
-let exportColSelector = (idx, data, node) =>  {
+let exportColSelector = (idx, data, node) => {
     // If one or more columns have been selected
     if (table.columns({ selected: true }).header().length > 0)
         // Return true (export) iff the current considered column is selected AND it's not the first one (checkbox)
@@ -21,7 +21,7 @@ window.electronAPI.onJsonData((rawJsonData) => {
     table = new DataTable('#dataTable', {
         data: jsonData,
         columns: [
-            { data: null, defaultContent: ''},
+            { data: null, defaultContent: '' },
             { data: 'Term', title: 'Term' },
             { data: 'ES', title: 'ES' },
             { data: 'NES', title: 'NES' },
@@ -33,9 +33,9 @@ window.electronAPI.onJsonData((rawJsonData) => {
             { data: 'Lead_genes', title: 'Lead_genes' }
         ],
         columnDefs: [
-            { 
+            {
                 // Enable ellipsis truncation on first and last data columns (term and lead_genes)
-                targets: [1, 9], 
+                targets: [1, 9],
                 render: DataTable.render.ellipsis(25)
             },
             {
@@ -54,7 +54,7 @@ window.electronAPI.onJsonData((rawJsonData) => {
         layout: {
             top2Start: {
                 pageLength: {
-                    menu: [ 10, 25, 50, 100, 300 ]
+                    menu: [10, 25, 50, 100, 300]
                 }
             },
             topStart: {
@@ -70,7 +70,7 @@ window.electronAPI.onJsonData((rawJsonData) => {
                                 enabled: false,
                                 action: () => {
                                     // Fetch the selected rows
-                                    let selectedRows = table.rows({selected: true}).data()
+                                    let selectedRows = table.rows({ selected: true }).data()
                                     let numSelectedRows = selectedRows.length
 
                                     // Put each selected rows Term field in an array
@@ -88,7 +88,7 @@ window.electronAPI.onJsonData((rawJsonData) => {
                                 enabled: false,
                                 action: () => {
                                     // Fetch the selected column title (e.g FDR q-val)
-                                    let selectedColumn = table.columns({selected: true}).titles()[0]
+                                    let selectedColumn = table.columns({ selected: true }).titles()[0]
 
                                     // Send the selected column title in JSON format
                                     window.electronAPI.requestDotplot(selectedColumn)
@@ -104,7 +104,7 @@ window.electronAPI.onJsonData((rawJsonData) => {
                 ]
             },
             bottomStart: {
-                 buttons: [
+                buttons: [
                     {
                         extend: 'collection',
                         text: 'Export',
@@ -135,7 +135,7 @@ window.electronAPI.onJsonData((rawJsonData) => {
                         ]
                     },
                     'colvis'
-                 ]
+                ]
             }
         }
     })
@@ -144,7 +144,7 @@ window.electronAPI.onJsonData((rawJsonData) => {
     table.on('select deselect', () => {
         var selectedRows = table.rows({ selected: true }).count()
         var selectedColumns = table.columns({ selected: true }).count()
-     
+
         table.button(['export:name']).enable(selectedRows > 0 || selectedColumns > 0)
         table.button(['enrichmentPlot:name']).enable(selectedRows > 0 && selectedColumns === 0)
         table.button(['dotplot:name']).enable(selectedRows === 0 && selectedColumns === 1)

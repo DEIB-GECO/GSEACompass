@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
+
+    <title>GSEAWrap</title>
+
+    <script src="../renderer_src/gsea_preranked_renderer.js" defer></script>
+
+    <link rel="stylesheet" type="text/css" href="../dependencies/datatables/datatables.min.css" />
+</head>
+
+<body>
+    <div class="container mt-3">
+        <form class="row">
+
+            <!-- Gene sets input -->
+            <div class="mb-3">
+                <label for="gene_sets" class="form-label">Gene sets database</label>
+                <input type="file" accept=".gmt, .gmx" name="gene_sets" id="gene_sets" class="form-control" required />
+            </div>
+
+            <!-- Number of permutations input -->
+            <div class="mb-3">
+                <label for="num_permutations" class="form-label">Number of permutations</label>
+                <input type="number" value="1000" name="num_permutations" id="num_permutations" class="form-control"
+                    required />
+            </div>
+
+            <!-- Ranked list input -->
+            <div class="mb-3">
+                <label for="ranked_list" class="form-label">Ranked list</label>
+                <input type="file" accept=".rnk" name="ranked_list" id="ranked_list" class="form-control" required />
+            </div>
+
+            <!-- Remap input -->
+            <div class="mb-3">
+                <fieldset class="border p-2 rounded">
+                    <legend class="form-label">Remap to gene symbols</legend>
+                    <div class="form-check">
+                        <input type="radio" id="remap" name="remap" value="remap" class="form-check-input" />
+                        <label for="remap" class="form-check-label">Remap</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" id="none" name="remap" value="none" checked
+                            class="form-check-input" />
+                        <label for="none" class="form-check-label">Do nothing</label>
+                    </div>
+                </fieldset>
+            </div>
+
+            <!-- Chip platform input -->
+            <div class="mb-3">
+                <label for="chip" class="form-label">Chip platform</label>
+                <input type="file" accept=".chip" name="chip" id="chip" class="form-control" />
+            </div>
+            
+            <div class="col-12 mb-3">
+                <button type="button" id="submit" class="btn btn-primary">Submit</button>
+            </div>
+        </form>
+    </div>
+
+</body>
+
+</html>
