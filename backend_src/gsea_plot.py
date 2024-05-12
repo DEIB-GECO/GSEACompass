@@ -38,7 +38,7 @@ match plot_type:
                     RESs=runes, 
                     hits=hits,
                     rank_metric=pre_res.ranking,
-                    legend_kws={"loc": (0, -1)}, 
+                    legend_kws={"loc": (0, 1.1)}, 
                     figsize=(4,5),
                     ofname="plots/gsea_plot.png")
     

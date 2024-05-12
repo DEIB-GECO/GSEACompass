@@ -1,32 +1,57 @@
 <!DOCTYPE html>
 
 <html>
+
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>GSEAWrap</title>
-        
+
         <script src="../dependencies/panzoom/panzoom.min.js"></script>
+        <script src="../renderer_src/plot_renderer.js" defer></script>
+        <link rel="stylesheet" href="../dependencies/datatables/datatables.css">
+
+
         <style>
-           * {
-            margin: 0;
-            padding: 0;
-        }
-        .imgbox {
-            display: grid;
-            height: 100%;
-        }
-        .center-fit {
-            max-width: 100%;
-            max-height: 100vh;
-            margin: auto;
-        }
+            body {
+                overflow: hidden;
+            }
+
+            .center-fit {
+                height: 80vh;
+                width: auto;
+                display: block;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .custom-btn {
+                width: 12%;
+                aspect-ratio: 4.5/2;
+                border-radius: 25px;
+                font-size: 290%;
+                margin: 10px;
+                position: sticky;
+                display: block;
+                float: left;
+            }
         </style>
     </head>
+
     <body>
-        <div class="imgbox">
-            <img src="../plots/gsea_plot.png" id="panzoom-img" class="center-fit" />
+        <!-- Image -->
+        <div>
+            <img src="../plots/gsea_plot.png" class="center-fit" id="panzoom-img" />
+        </div>
+
+        <!-- Buttons -->
+        <div>
+            <a href="../plots/gsea_plot.png" download="gseawrap_plot">
+                <button type="button" class="btn btn-primary btn-lg custom-btn">Save</button>
+            </a>
+            <button class="btn btn-secondary custom-btn" id="zoom-in">Zoom In</button>
+            <button class="btn btn-secondary custom-btn" id="zoom-out">Zoom Out</button>
         </div>
     </body>
 
-    <script src="../renderer_src/plot_renderer.js"></script>
 </html>
