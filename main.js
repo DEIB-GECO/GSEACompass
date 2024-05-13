@@ -49,7 +49,31 @@ const exitOnProcessFail = (process, info) => {
     })
 }
 
-// Function that creates and handles the main window
+// Function that creates the home window
+const createMainWindow = () => {
+    const mainWindow = new BrowserWindow({
+        width: 800,
+        height: 600,
+        webPreferences: {
+            preload: path.join(__dirname, 'preload_src', 'main_preload.js')
+        }
+    })
+
+    ipcMain.on('open-gsea-preranked', _event => {
+        createGseaPrerankedWindow()
+    })
+
+    ipcMain.on('open-gsea', _event => {
+        createGseaWindow()
+    })
+
+    ipcMain.on('open-last-results', _event => {
+        createTableWindow()
+    })
+
+    mainWindow.loadFile('web_pages/main.html')
+}
+
 // Function that creates and handles the GSEA analysis window
 const createGseaWindow = () => {
     const gseaWindow = new BrowserWindow({
@@ -76,6 +100,7 @@ const createGseaWindow = () => {
 
         exitOnProcessFail(pythonProcess, 'The app failed while computing the GSEA analysis')
     })
+
     gseaWindow.loadFile('web_pages/gsea.html')
 }
 
@@ -158,17 +183,15 @@ const createPlotWindow = (customWidth, customHeight) => {
 }
 
 app.whenReady().then(() => {
-    // ### Debug ###
     // var fs = require('fs')
     // var data = fs.readFileSync('../test_data/test_result.json', 'utf8')
     // createTableWindow(data)
-    // ### ### ###
 
-    createGseaPrerankedWindow()
+    createMainWindow()
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0)
-            createGseaPrerankedWindow()
+            createMainWindow()
     })
 })
 
