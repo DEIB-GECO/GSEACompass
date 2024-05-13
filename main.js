@@ -95,7 +95,7 @@ const createGseaWindow = () => {
             jsonContent += data
         })
         pythonProcess.stdout.on('end', _data => {
-            createTableWindow(jsonContent)
+            createTableWindow(jsonContent, 'gsea')
         })
 
         exitOnProcessFail(pythonProcess, 'The app failed while computing the GSEA analysis')
@@ -125,7 +125,7 @@ const createGseaPrerankedWindow = () => {
             jsonContent += data
         })
         pythonProcess.stdout.on('end', _data => {
-            createTableWindow(jsonContent)
+            createTableWindow(jsonContent, 'gsea_preranked')
         })
 
         exitOnProcessFail(pythonProcess, 'The app failed while computing the preranked analysis')
@@ -134,7 +134,7 @@ const createGseaPrerankedWindow = () => {
     gseaPrerankedWindow.loadFile('web_pages/gsea_preranked.html')
 }
 
-const createTableWindow = jsonRawData => {
+const createTableWindow = (jsonRawData, analysis_type) => {
     const tableWindow = new BrowserWindow({
         width: 800,
         height: 600,
@@ -144,7 +144,7 @@ const createTableWindow = jsonRawData => {
     })
 
     ipcMain.on('request-json-data', _event => {
-        tableWindow.webContents.send('send-json-data', jsonRawData)
+        tableWindow.webContents.send('send-json-data', jsonRawData, analysis_type)
     })
 
     ipcMain.on('request-enrichment-plot', (_event, selectedTerms) => {
@@ -167,6 +167,26 @@ const createTableWindow = jsonRawData => {
         exitOnProcessFail(pythonProcess, "The app failed while computing a plot")
     })
 
+    ipcMain.on('request-heatmap', (_event, selectedRow) => {
+        const pythonProcess = spawn('venv/bin/python3.12', ['backend_src/gsea_plot.py', 'heatmap', selectedRow])
+
+        pythonProcess.stdout.on('end', _data => {
+            createPlotWindow(900, 500)
+        })
+
+        exitOnProcessFail(pythonProcess, "The app failed while computing a plot")
+    })
+
+    ipcMain.on('request-word-cloud', (_event, selectedColumn) => {
+        const pythonProcess = spawn('venv/bin/python3.12', ['backend_src/gsea_plot.py', 'wordcloud', selectedColumn])
+
+        pythonProcess.stdout.on('end', _data => {
+            createPlotWindow(800, 600)
+        })
+
+        exitOnProcessFail(pythonProcess, "The app failed while computing a plot")
+    })
+
     tableWindow.maximize()
 
     tableWindow.loadFile('web_pages/table.html')
@@ -183,11 +203,11 @@ const createPlotWindow = (customWidth, customHeight) => {
 }
 
 app.whenReady().then(() => {
-    // var fs = require('fs')
-    // var data = fs.readFileSync('../test_data/test_result.json', 'utf8')
-    // createTableWindow(data)
+    var fs = require('fs')
+    var data = fs.readFileSync('../test_data/gsea/test_result.json', 'utf8')
+    createTableWindow(data, 'gsea')
 
-    createMainWindow()
+    // createMainWindow()
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0)

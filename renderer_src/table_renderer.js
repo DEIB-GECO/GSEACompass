@@ -2,7 +2,7 @@ window.electronAPI.requestJsonData()
 
 // Function applied to each column to verify whether it should be exported or not
 // Returns true if the current column should be exported, otherwise false
-let exportColSelector = (idx, data, node) => {
+let exportColSelector = (idx, _data, _node) => {
     // If one or more columns have been selected
     if (table.columns({ selected: true }).header().length > 0)
         // Return true (export) iff the current considered column is selected AND it's not the first one (checkbox)
@@ -14,10 +14,18 @@ let exportColSelector = (idx, data, node) => {
 }
 
 let table = ''
+const tableTitle = document.querySelector('#table-title')
 
-window.electronAPI.onJsonData((rawJsonData) => {
+window.electronAPI.onJsonData((rawJsonData, analysisType) => {
     jsonData = JSON.parse(rawJsonData)
 
+    // Set title above the table
+    if (analysisType === 'gsea')
+        tableTitle.innerText = 'GSEA results'
+    else if (analysisType === 'gsea_preranked')
+        tableTitle.innerText = 'GSEA preranked results'
+
+    // Initialise the table
     table = new DataTable('#dataTable', {
         data: jsonData,
         columns: [
@@ -93,6 +101,29 @@ window.electronAPI.onJsonData((rawJsonData) => {
                                     // Send the selected column title in JSON format
                                     window.electronAPI.requestDotplot(selectedColumn)
                                 }
+                            },
+                            {
+                                text: 'Heatmap',
+                                name: 'heatmap',
+                                enabled: false,
+                                action: () => {
+                                    // Fetch the selected row
+                                    let selectedRow = table.rows({ selected: true }).data()[0]
+
+                                    // Send the selected row in JSON format
+                                    window.electronAPI.requestHeatmap(JSON.stringify(selectedRow))
+                                }
+                            },
+                            {
+                                text: 'Wordcloud',
+                                name: 'wordcloud',
+                                enabled: false,
+                                action: () => {
+                                    // Fetch the selected column data
+                                    let selectedColumn = table.columns({ selected: true }).data().toArray().toString()
+
+                                    window.electronAPI.requestWordCloud(JSON.stringify(selectedColumn))
+                                }
                             }
                         ]
                     },
@@ -148,6 +179,8 @@ window.electronAPI.onJsonData((rawJsonData) => {
         table.button(['export:name']).enable(selectedRows > 0 || selectedColumns > 0)
         table.button(['enrichmentPlot:name']).enable(selectedRows > 0 && selectedColumns === 0)
         table.button(['dotplot:name']).enable(selectedRows === 0 && selectedColumns === 1)
+        table.button(['heatmap:name']).enable(selectedRows === 1 && analysisType === 'gsea')
+        table.button(['wordcloud:name']).enable(selectedColumns === 1)
     })
 })
 

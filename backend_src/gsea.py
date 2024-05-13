@@ -23,13 +23,13 @@ else:
     expression_set_chosen = expression_set.join(chip).reset_index(drop=True).dropna()
 
 res = gp.gsea(data=expression_set_chosen,
-                 gene_sets=gene_sets_path,
-                 cls=phenotype_labels_path,
-                 permutation_type="phenotype",
-                 permutation_num=num_permutation,
-                 outdir=None,
-                 method="signal_to_noise",
-                 threads=4, seed= 7)
+              gene_sets=gene_sets_path,
+              cls=phenotype_labels_path,
+              permutation_type="phenotype",
+              permutation_num=num_permutation,
+              outdir=None,
+              method="signal_to_noise",
+              threads=4, seed= 7)
 
 res_json = res.res2d.to_json(orient="records")
 
