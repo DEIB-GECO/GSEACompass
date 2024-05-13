@@ -23,21 +23,21 @@ match plot_type:
 
         # If just one term is passed
         if len(selected_terms) == 1:
-            gseaplot(rank_metric=pre_res.ranking, 
+            gseaplot(rank_metric=res.ranking, 
                     term=selected_terms[0],
                     figsize=(4,5),
                     ofname="plots/gsea_plot.png",
-                    **pre_res.results[selected_terms[0]])
+                    **res.results[selected_terms[0]])
         
         # If two or more terms are passed
         else:
-            hits = [pre_res.results[t]["hits"] for t in selected_terms]
-            runes = [pre_res.results[t]["RES"] for t in selected_terms]
+            hits = [res.results[t]["hits"] for t in selected_terms]
+            runes = [res.results[t]["RES"] for t in selected_terms]
 
             gseaplot2(terms=selected_terms, 
                     RESs=runes, 
                     hits=hits,
-                    rank_metric=pre_res.ranking,
+                    rank_metric=res.ranking,
                     legend_kws={"loc": (0, 1.1)}, 
                     figsize=(4,5),
                     ofname="plots/gsea_plot.png")
@@ -45,7 +45,7 @@ match plot_type:
     case "dotplot":
         selected_column = sys.argv[2]
 
-        dotplot(pre_res.res2d,
+        dotplot(res.res2d,
                 column=selected_column,
                 title=selected_column + " dotplot",
                 cmap=plt.cm.viridis,

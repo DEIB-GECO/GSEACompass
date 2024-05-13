@@ -18,7 +18,7 @@ log.transports.file.resolvePathFn = () => path.join(__dirname, LOG_FILE_POS)
 
 // Function to be called when there's a major failure, because of which
 // the app hat to exit
-const exitOnFail = (info, error) => {
+const fail = (info, error) => {
     console.log(info + error)
     log.error(info + '\n' + error)
 
@@ -32,22 +32,54 @@ const exitOnFail = (info, error) => {
     app.exit(-1)
 }
 
-const exitOnPythonProcessFail = (pythonProcess, info) => {
+// Utility function that collects the stderr output and make the app fail in case the passed
+// process returns a code different from 0
+const exitOnProcessFail = (process, info) => {
     let stderrChunks = []
 
-    pythonProcess.stderr.on('data', data => {
+    process.stderr.on('data', data => {
         stderrChunks = stderrChunks.concat(data)
     })
 
-    pythonProcess.on('exit', code => {
+    process.on('exit', code => {
         if (code != 0) {
             let stderrContent = Buffer.concat(stderrChunks).toString()
-            exitOnFail(info, stderrContent)
+            fail(info, stderrContent)
         }
     })
 }
 
 // Function that creates and handles the main window
+// Function that creates and handles the GSEA analysis window
+const createGseaWindow = () => {
+    const gseaWindow = new BrowserWindow({
+        width: 800,
+        height: 670,
+        webPreferences: {
+            preload: path.join(__dirname, 'preload_src', 'gsea_preload.js')
+        }
+    })
+
+    // Message sent by the TableWindow renderer when a GSEA analysis has been requested
+    ipcMain.on('send-data-gsea', (_event, geneSetsPath, numPermutations, expressionSet, phenotypeLabels, remapOption, chipPath) => {
+        const pythonProcess = spawn('venv/bin/python3.12', ['backend_src/gsea.py',
+            geneSetsPath, numPermutations, expressionSet, phenotypeLabels, remapOption, chipPath])
+
+        let jsonContent = ''
+
+        pythonProcess.stdout.on('data', data => {
+            jsonContent += data
+        })
+        pythonProcess.stdout.on('end', _data => {
+            createTableWindow(jsonContent)
+        })
+
+        exitOnProcessFail(pythonProcess, 'The app failed while computing the GSEA analysis')
+    })
+    gseaWindow.loadFile('web_pages/gsea.html')
+}
+
+// Function that creates and handles the preranked analysis window
 const createGseaPrerankedWindow = () => {
     const gseaPrerankedWindow = new BrowserWindow({
         width: 800,
@@ -71,7 +103,7 @@ const createGseaPrerankedWindow = () => {
             createTableWindow(jsonContent)
         })
 
-        exitOnPythonProcessFail(pythonProcess, 'The app failed while computing the preranked analysis')
+        exitOnProcessFail(pythonProcess, 'The app failed while computing the preranked analysis')
     })
 
     gseaPrerankedWindow.loadFile('web_pages/gsea_preranked.html')
@@ -97,7 +129,7 @@ const createTableWindow = jsonRawData => {
             createPlotWindow(800, 600)
         })
 
-        exitOnPythonProcessFail(pythonProcess, "The app failed while computing a plot")
+        exitOnProcessFail(pythonProcess, "The app failed while computing a plot")
     })
 
     ipcMain.on('request-dotplot', (_event, selectedColumn) => {
@@ -107,18 +139,7 @@ const createTableWindow = jsonRawData => {
             createPlotWindow(900, 500)
         })
 
-        let stderrChunks = []
-
-        pythonProcess.stderr.on('data', data => {
-            stderrChunks = stderrChunks.concat(data)
-        })
-        pythonProcess.stderr.on('end', _data => {
-            let stderrContent = Buffer.concat(stderrChunks).toString()
-
-            if (stderrContent.length !== 0)
-                exitOnFail("The app failed while computing the plot", stderrContent)
-        })
-
+        exitOnProcessFail(pythonProcess, "The app failed while computing a plot")
     })
 
     tableWindow.maximize()
