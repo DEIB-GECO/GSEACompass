@@ -1,15 +1,17 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron')
 const { spawn } = require('child_process')
+const fs = require('fs')
 const path = require('node:path')
 const notifier = require('node-notifier')
 const log = require('electron-log/main')
+const tmp = require('tmp')
 
 // Function to get current date in yyyy-mm-dd format as a string
 const currentDate = () => {
-    return new Date().toISOString().slice(0,10)
+    return new Date().toISOString().slice(0, 10)
 }
 
-const LOG_FILE_POS = 'GSEAWrap_logs/error_' +  currentDate() + '.log'
+const LOG_FILE_POS = 'GSEAWrap_logs/error_' + currentDate() + '.log'
 
 // Setup the logger
 // It will be used just for errors and it must save the logs in the local directory
@@ -86,7 +88,7 @@ const createGseaWindow = () => {
 
     // Message sent by the TableWindow renderer when a GSEA analysis has been requested
     ipcMain.on('send-data-gsea', (_event, geneSetsPath, numPermutations, expressionSet, phenotypeLabels, remapOption, chipPath) => {
-        const pythonProcess = spawn('venv/bin/python3.12', ['backend_src/gsea.py',
+        const pythonProcess = spawn('python', ['backend_src/gsea.py',
             geneSetsPath, numPermutations, expressionSet, phenotypeLabels, remapOption, chipPath])
 
         let jsonContent = ''
@@ -116,7 +118,7 @@ const createGseaPrerankedWindow = () => {
 
     // Message sent by the TableWindow renderer when a preranked analysis has been requested
     ipcMain.on('send-data-preranked', (_event, geneSetsPath, numPermutations, rankedListPath, collapseRemapOption, chipPath) => {
-        const pythonProcess = spawn('venv/bin/python3.12', ['backend_src/gsea_preranked.py',
+        const pythonProcess = spawn('python', ['backend_src/gsea_preranked.py',
             geneSetsPath, numPermutations, rankedListPath, collapseRemapOption, chipPath])
 
         let jsonContent = ''
@@ -148,43 +150,55 @@ const createTableWindow = (jsonRawData, analysis_type) => {
     })
 
     ipcMain.on('request-enrichment-plot', (_event, selectedTerms) => {
-        const pythonProcess = spawn('venv/bin/python3.12', ['backend_src/gsea_plot.py', 'enrichment-plot', selectedTerms])
+        const pythonProcess = spawn('python', ['backend_src/gsea_plot.py', 'enrichment-plot', selectedTerms])
 
         pythonProcess.stdout.on('end', _data => {
             createPlotWindow(800, 600)
         })
 
-        exitOnProcessFail(pythonProcess, "The app failed while computing a plot")
+        exitOnProcessFail(pythonProcess, 'The app failed while computing a plot')
     })
 
     ipcMain.on('request-dotplot', (_event, selectedColumn) => {
-        const pythonProcess = spawn('venv/bin/python3.12', ['backend_src/gsea_plot.py', 'dotplot', selectedColumn])
+        const pythonProcess = spawn('python', ['backend_src/gsea_plot.py', 'dotplot', selectedColumn])
 
         pythonProcess.stdout.on('end', _data => {
             createPlotWindow(900, 500)
         })
 
-        exitOnProcessFail(pythonProcess, "The app failed while computing a plot")
+        exitOnProcessFail(pythonProcess, 'The app failed while computing a plot')
     })
 
     ipcMain.on('request-heatmap', (_event, selectedRow) => {
-        const pythonProcess = spawn('venv/bin/python3.12', ['backend_src/gsea_plot.py', 'heatmap', selectedRow])
+        const pythonProcess = spawn('python', ['backend_src/gsea_plot.py', 'heatmap', selectedRow])
 
         pythonProcess.stdout.on('end', _data => {
             createPlotWindow(900, 500)
         })
 
-        exitOnProcessFail(pythonProcess, "The app failed while computing a plot")
+        exitOnProcessFail(pythonProcess, 'The app failed while computing a plot')
     })
 
     ipcMain.on('request-word-cloud', (_event, selectedColumn) => {
-        const pythonProcess = spawn('venv/bin/python3.12', ['backend_src/gsea_plot.py', 'wordcloud', selectedColumn])
+        // Create a tmp file
+        const tmpFile = tmp.fileSync();
+
+        // Write to the tmp file the selected column data
+        fs.writeFileSync(tmpFile.name, selectedColumn, err => {
+            if(err)
+                log.error('The selected column data file, to be passed to python script, couldn\'t be created')
+        })
+
+        const pythonProcess = spawn('python', ['backend_src/gsea_plot.py', 'wordcloud', tmpFile.name])
 
         pythonProcess.stdout.on('end', _data => {
+            // Remove the tmp file
+            tmpFile.removeCallback()
+
             createPlotWindow(800, 600)
         })
 
-        exitOnProcessFail(pythonProcess, "The app failed while computing a plot")
+        exitOnProcessFail(pythonProcess, 'The app failed while computing a plot')
     })
 
     tableWindow.maximize()
@@ -199,13 +213,22 @@ const createPlotWindow = (customWidth, customHeight) => {
         autoHideMenuBar: true
     })
 
+    // Delete plot file when the window is closed
+    plotWindow.on('close', _event => {
+        fs.unlink('gsea_plot.png', err => {
+            if (err)
+                log.error('Plot file gsea_plot.png couldn\'t be deleted')
+        })
+    })
+
     plotWindow.loadFile('web_pages/plot.html')
 }
 
 app.whenReady().then(() => {
-    var fs = require('fs')
-    var data = fs.readFileSync('../test_data/gsea/test_result.json', 'utf8')
+    // --- Debug
+    let data = fs.readFileSync('../test_data/gsea/test_result.json', 'utf8')
     createTableWindow(data, 'gsea')
+    // --- Debug
 
     // createMainWindow()
 
@@ -216,6 +239,12 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin')
+    if (process.platform !== 'darwin') {
+        // fs.unlink('gsea_run.pkl', err => {
+        //     if (err)
+        //         log.error('Python session file gsea_run.pkl couldn\'t be deleted')
+        // })
+
         app.quit()
+    }
 })

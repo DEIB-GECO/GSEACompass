@@ -17,6 +17,9 @@ plot_type = sys.argv[1]
 # Load the saved python session, with all its variables
 dill.load_session("gsea_run.pkl")
 
+# Default plot file name
+PLOT_FILE = "gsea_plot.png"
+
 match plot_type:
 
     case "enrichment-plot":
@@ -30,7 +33,7 @@ match plot_type:
             gseaplot(rank_metric=res.ranking, 
                     term=selected_terms[0],
                     figsize=(4,5),
-                    ofname="plots/gsea_plot.png",
+                    ofname=PLOT_FILE,
                     **res.results[selected_terms[0]])
         
         # If two or more terms are passed
@@ -44,7 +47,7 @@ match plot_type:
                     rank_metric=res.ranking,
                     legend_kws={"loc": (0, 1.1)}, 
                     figsize=(4,5),
-                    ofname="plots/gsea_plot.png")
+                    ofname=PLOT_FILE)
     
     case "dotplot":
         selected_column = sys.argv[2]
@@ -55,7 +58,7 @@ match plot_type:
                 cmap=plt.cm.viridis,
                 size=6,
                 figsize=(4,5), cutoff=0.25, show_ring=False,
-                ofname="plots/gsea_plot.png")
+                ofname=PLOT_FILE)
         
     case "heatmap":
         selected_row_raw = sys.argv[2]
@@ -70,10 +73,15 @@ match plot_type:
                 z_score=0, 
                 title=selected_term,
                 figsize=(14,4),
-                ofname="plots/gsea_plot.png")
+                ofname=PLOT_FILE)
         
     case "wordcloud":
-        selected_column = sys.argv[2]
+        selected_column_file_path = sys.argv[2]
+        
+        # Read selected column data from file path passed as CLI arguments
+        file = open(selected_column_file_path, "r")
+        selected_column = file.read()
+        file.close()
         
         data = selected_column.replace("_", " ").replace(";", " ").replace(",", " ")
         
@@ -82,7 +90,7 @@ match plot_type:
                        background_color="white",
                        scale=4).generate(data)
         
-        wc.to_file("plots/gsea_plot.png")
+        wc.to_file(PLOT_FILE)
     
     case _:
         print("Error: request plot doesn't exist")
