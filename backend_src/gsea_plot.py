@@ -6,9 +6,11 @@ from io import StringIO
 import dill
 from operator import itemgetter
 import numpy as np
+import seaborn as sns
 from PIL import Image
 from wordcloud import WordCloud
 from nltk.corpus import stopwords
+import json
 
 # Read plot type argument passed by the script call
 # it's supposed either "enrichment-plot" or "dotplot"
@@ -74,6 +76,55 @@ match plot_type:
                 title=selected_term,
                 figsize=(14,4),
                 ofname=PLOT_FILE)
+        
+    case "intersection-over-union":
+        selected_genesets_raw = sys.argv[2]
+        
+        # Convert the JSON-formatted input in a dictionary
+        selected_genesets = json.loads(selected_genesets_raw)
+        genesets = {}
+        labels = {}
+        i = 0
+        
+        for elem in selected_genesets:
+            term = elem['term']
+            lead_genes = elem['lead_genes']
+            
+            # Create a short label for each geneset
+            label = 'G' + str(i)
+            labels[label] = term
+            
+            genesets[label] = set(lead_genes)
+            
+            i = i+1
+
+        # Calculate the IOU for each pair of gene sets
+        iou_matrix = pd.DataFrame(index=genesets.keys(), columns=genesets.keys())
+        for i in genesets:
+            for j in genesets:
+                intersection = genesets[i].intersection(genesets[j])
+                union = genesets[i].union(genesets[j])
+                iou = len(intersection) / len(union)
+                iou_matrix.loc[i, j] = iou
+
+        # Convert the matrix to float
+        iou_matrix = iou_matrix.astype(float)
+
+        # Mask for the upper triangle, main diagonal included
+        mask = np.triu(np.ones_like(iou_matrix, dtype=bool), k=1)
+        
+        # Generate the heatmap
+        fig, ax = plt.subplots(figsize=(7, 7))
+        ax.set_aspect('equal')
+        sns.heatmap(iou_matrix, mask=mask, annot=False, cmap='YlGnBu', ax=ax, linewidths=0.5, linecolor='lightgrey')
+
+        # Add a legend for the labels
+        ax.legend([plt.Line2D([0], [0], color='white') for _ in labels], 
+                [f'{k}: {v}' for k, v in labels.items()], 
+                bbox_to_anchor=(1.20, 1.1), loc='upper left')
+
+        # Save the figure
+        fig.savefig(PLOT_FILE, bbox_inches='tight')
         
     case "wordcloud":
         selected_column_file_path = sys.argv[2]

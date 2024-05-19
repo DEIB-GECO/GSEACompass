@@ -91,7 +91,6 @@ const LOG_FILE_NAME = 'error_' + currentDate() + '.log'
 log.transports.file.level = 'error'
 log.transports.file.resolvePathFn = () => localPath('log', LOG_FILE_NAME)
 
-
 // Function that creates the home window
 const createMainWindow = () => {
     const mainWindow = new BrowserWindow({
@@ -217,6 +216,16 @@ const createTableWindow = (jsonRawData, analysisType) => {
         exitOnProcessFail(pythonProcess, 'The app failed while computing a plot')
     })
 
+    ipcMain.on('request-iou-plot', (_event, selectedGenesets) => {
+        const pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'intersection-over-union', selectedGenesets])
+
+        pythonProcess.stdout.on('end', _data => {
+            createPlotWindow(800, 600)
+        })
+
+        exitOnProcessFail(pythonProcess, 'The app failed while computing a plot')
+    })
+
     ipcMain.on('request-word-cloud', (_event, selectedColumn) => {
         // Create a tmp file
         const tmpFile = tmp.fileSync();
@@ -313,12 +322,13 @@ Menu.setApplicationMenu(null)
 app.disableHardwareAcceleration()
 
 app.whenReady().then(() => {
+
     // --- Debug
     let data = fs.readFileSync('../test_data/preranked/test_result.json', 'utf8')
     createTableWindow(data, 'gsea_preranked')
     // --- Debug
 
-    //createMainWindow()
+    // createMainWindow()
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0)
@@ -336,4 +346,3 @@ app.on('window-all-closed', () => {
 
         app.quit()
     }
-})

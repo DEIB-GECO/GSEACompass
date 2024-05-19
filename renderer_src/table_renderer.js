@@ -112,6 +112,25 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                                 }
                             },
                             {
+                                text: 'Intersection over union',
+                                name: 'iouPlot',
+                                enabled: false,
+                                action: () => {
+                                    // Fetch the selected rows
+                                    let selectedRows = table.rows({ selected: true }).data()
+                                    let numSelectedRows = selectedRows.length
+
+                                    // Put each selected rows Term and Lead_genes fields in an array of dictionaries
+                                    let selectedGenesets = []
+                                    for (let i = 0; i < numSelectedRows; i++)
+                                        selectedGenesets[i] = {
+                                            'term': selectedRows[i].Term, 
+                                            'lead_genes': selectedRows[i].Lead_genes.split(';') }
+
+                                    window.electronAPI.requestIOUPlot(JSON.stringify(selectedGenesets))
+                                }
+                            },
+                            {
                                 text: 'Wordcloud',
                                 name: 'wordcloud',
                                 enabled: false,
@@ -177,6 +196,7 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
         table.button(['enrichmentPlot:name']).enable(selectedRows > 0 && selectedColumns === 0)
         table.button(['dotplot:name']).enable(selectedRows === 0 && selectedColumns === 1)
         table.button(['heatmap:name']).enable(selectedRows === 1 && analysisType === 'gsea')
+        table.button(['iouPlot:name']).enable(selectedRows >= 2 && selectedColumns === 0)
         table.button(['wordcloud:name']).enable(selectedColumns === 1)
     })
 
