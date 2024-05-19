@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gene set information</title>
+
+    <script src="../renderer_src/gene_set_info_renderer.js" defer></script>
+
+    <link rel="stylesheet" type="text/css" href="../dependencies/datatables/datatables.min.css" />
+</head>
+
+<body class="container-fluid text-dark bg-white">
+    <div class="row">
+        <div class="col">
+            <div class="mb-4">
+                <h2 class="mt-4 mb-4 text-primary"><b id="title"></b></h2>
+                <p id="genes"></p>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col text-dark rounded-1 m-2" style="background-color: #e8e8e8;">
+            <h3 class="my-3">Details</h3>
+            <div class="mb-4">
+                <p class="mb-2">Standard name: <span id="standard_name"></span></p>
+                <p class="mb-2">Systematic name: <span id="systematic_name"></span></p>
+                <p class="mb-2">GEO id: <span id="GEO_id"></span></p>
+                <p class="mb-2">Brief description: <span id="description_brief"></span></p>
+                <p class="mb-2">Full description: <span id="description_full"></span></p>
+                <p class="mb-2">Species: <span id="species_name"></span></p>
+                <p class="mb-2">Exact source: <span id="exact_source"></span></p>
+                <p class="mb-2">Contributor: <span id="contributor"></span></p>
+                <p class="mb-2">Contributor organization: <span id="contributor_organization"></span></p>
+                <p>External details URL: <a id="external_details_URL"></a></p>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col text-dark rounded-1 m-2" style="background-color: #e8e8e8;">
+            <h3 class="my-3">Publication</h3>
+            <div class="mb-4">
+                <p class="mb-2">Title: <span id="publication_title"></span></p>
+                <p class="mb-2">PMID: <span id="publication_PMID"></span></p>
+                <p class="mb-2">DOI: <span id="publication_DOI"></span></p>
+                <p class="mb-2">URL: <a id="publication_URL"></a></p>
+                <p>Authors: <span id="authors"></span></p>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -11,7 +11,3 @@ gseaBtn.addEventListener('click', _event => {
     console.log('gsea')
     window.electronAPI.openGsea()
 })
-
-lastResultsBtn.addEventListener('click', _event => {
-    window.electronAPI.openLastResults()
-})

@@ -88,7 +88,8 @@ match plot_type:
         wc = WordCloud(width=800, 
                        height=500,
                        background_color="white",
-                       scale=4).generate(data)
+                       scale=4
+                       ).generate(data)
         
         wc.to_file(PLOT_FILE)
     

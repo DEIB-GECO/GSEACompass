@@ -1,5 +1,3 @@
-window.electronAPI.requestJsonData()
-
 // Function applied to each column to verify whether it should be exported or not
 // Returns true if the current column should be exported, otherwise false
 let exportColSelector = (idx, _data, _node) => {
@@ -16,7 +14,7 @@ let exportColSelector = (idx, _data, _node) => {
 let table = ''
 const tableTitle = document.querySelector('#table-title')
 
-window.electronAPI.onJsonData((rawJsonData, analysisType) => {
+window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
     jsonData = JSON.parse(rawJsonData)
 
     // Set title above the table
@@ -52,7 +50,6 @@ window.electronAPI.onJsonData((rawJsonData, analysisType) => {
                 render: DataTable.render.select()
             }
         ],
-        // responsive: true,
         select: {
             style: 'multi',
             selector: 'td, th'
@@ -173,14 +170,22 @@ window.electronAPI.onJsonData((rawJsonData, analysisType) => {
 
     // Every time a rows/column has been selected or deselected
     table.on('select deselect', () => {
-        var selectedRows = table.rows({ selected: true }).count()
-        var selectedColumns = table.columns({ selected: true }).count()
+        let selectedRows = table.rows({ selected: true }).count()
+        let selectedColumns = table.columns({ selected: true }).count()
 
         table.button(['export:name']).enable(selectedRows > 0 || selectedColumns > 0)
         table.button(['enrichmentPlot:name']).enable(selectedRows > 0 && selectedColumns === 0)
         table.button(['dotplot:name']).enable(selectedRows === 0 && selectedColumns === 1)
         table.button(['heatmap:name']).enable(selectedRows === 1 && analysisType === 'gsea')
         table.button(['wordcloud:name']).enable(selectedColumns === 1)
+    })
+
+    // Every time a row is double clicked on
+    table.on('dblclick', 'tr', (event) => {
+        let dblClickedTr = event.target.closest('tr')
+        let dblClickedTerm = table.row(dblClickedTr).data().Term
+
+        window.electronAPI.requestGeneSetInfo(dblClickedTerm)
     })
 })
 

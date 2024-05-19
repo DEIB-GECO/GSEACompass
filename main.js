@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron')
+const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron')
 const { spawn } = require('child_process')
 const fs = require('fs')
 const path = require('node:path')
@@ -6,20 +6,13 @@ const notifier = require('node-notifier')
 const log = require('electron-log/main')
 const tmp = require('tmp')
 
-// Function to get current date in yyyy-mm-dd format as a string
+
+// Utility function to get current date in yyyy-mm-dd format as a string
 const currentDate = () => {
     return new Date().toISOString().slice(0, 10)
 }
 
-const LOG_FILE_POS = 'GSEAWrap_logs/error_' + currentDate() + '.log'
-
-// Setup the logger
-// It will be used just for errors and it must save the logs in the local directory
-log.transports.file.level = 'error'
-log.transports.file.resolvePathFn = () => path.join(__dirname, LOG_FILE_POS)
-
-// Function to be called when there's a major failure, because of which
-// the app hat to exit
+// Utility function to be called when there's a major failure, because of which the app must exit
 const fail = (info, error) => {
     console.log(info + error)
     log.error(info + '\n' + error)
@@ -51,13 +44,61 @@ const exitOnProcessFail = (process, info) => {
     })
 }
 
+// Utility function that create a local path
+const localPath = (type, file) => {
+    let dir = ''
+    let ext = ''
+    switch (type) {
+        case 'web':
+            dir = 'web_pages' 
+            ext = '.html'
+            break
+        case 'preload':
+            dir = 'preload_src'
+            ext = '.js'
+            break
+        case 'python':
+            dir = 'backend_src'
+            ext = '.py'
+            break
+        case 'renderer':
+            dir = 'renderer_src'
+            ext = '.js'
+            break
+        case 'resources':
+            dir = 'GSEAWrap_resources'
+            break
+        case 'log':
+            dir = 'GSEAWrap_log'
+            break
+        default:
+            fail('Wrong local path given')
+    }
+
+    let locPath = ''
+    
+    if (file == null || file == '')
+        locPath = path.join(__dirname, dir)
+    else 
+        locPath = path.join(__dirname, dir, file + ext)
+
+    return locPath
+}
+
+// Setup the logger
+// It will be used just for errors and it must save the logs in the local directory
+const LOG_FILE_NAME = 'error_' + currentDate() + '.log'
+log.transports.file.level = 'error'
+log.transports.file.resolvePathFn = () => localPath('log', LOG_FILE_NAME)
+
+
 // Function that creates the home window
 const createMainWindow = () => {
     const mainWindow = new BrowserWindow({
         width: 800,
         height: 600,
         webPreferences: {
-            preload: path.join(__dirname, 'preload_src', 'main_preload.js')
+            preload: localPath('preload', 'main_preload')
         }
     })
 
@@ -69,11 +110,7 @@ const createMainWindow = () => {
         createGseaWindow()
     })
 
-    ipcMain.on('open-last-results', _event => {
-        createTableWindow()
-    })
-
-    mainWindow.loadFile('web_pages/main.html')
+    mainWindow.loadFile(localPath('web', 'main'))
 }
 
 // Function that creates and handles the GSEA analysis window
@@ -82,13 +119,13 @@ const createGseaWindow = () => {
         width: 800,
         height: 670,
         webPreferences: {
-            preload: path.join(__dirname, 'preload_src', 'gsea_preload.js')
+            preload: localPath('preload', 'gsea_preload')
         }
     })
 
     // Message sent by the TableWindow renderer when a GSEA analysis has been requested
     ipcMain.on('send-data-gsea', (_event, geneSetsPath, numPermutations, expressionSet, phenotypeLabels, remapOption, chipPath) => {
-        const pythonProcess = spawn('python', ['backend_src/gsea.py',
+        const pythonProcess = spawn('python', [localPath('python', 'gsea'),
             geneSetsPath, numPermutations, expressionSet, phenotypeLabels, remapOption, chipPath])
 
         let jsonContent = ''
@@ -112,13 +149,13 @@ const createGseaPrerankedWindow = () => {
         width: 800,
         height: 600,
         webPreferences: {
-            preload: path.join(__dirname, 'preload_src', 'gsea_preranked_preload.js')
+            preload: localPath('preload', 'gsea_preranked_preload')
         }
     })
 
     // Message sent by the TableWindow renderer when a preranked analysis has been requested
     ipcMain.on('send-data-preranked', (_event, geneSetsPath, numPermutations, rankedListPath, collapseRemapOption, chipPath) => {
-        const pythonProcess = spawn('python', ['backend_src/gsea_preranked.py',
+        const pythonProcess = spawn('python', [localPath('python', 'gsea_preranked'),
             geneSetsPath, numPermutations, rankedListPath, collapseRemapOption, chipPath])
 
         let jsonContent = ''
@@ -136,21 +173,22 @@ const createGseaPrerankedWindow = () => {
     gseaPrerankedWindow.loadFile('web_pages/gsea_preranked.html')
 }
 
-const createTableWindow = (jsonRawData, analysis_type) => {
+// Function that creates and handles the data table window
+const createTableWindow = (jsonRawData, analysisType) => {
     const tableWindow = new BrowserWindow({
         width: 800,
         height: 600,
         webPreferences: {
-            preload: path.join(__dirname, 'preload_src', 'table_preload.js')
+            preload: localPath('preload', 'table_preload')
         }
     })
 
-    ipcMain.on('request-json-data', _event => {
-        tableWindow.webContents.send('send-json-data', jsonRawData, analysis_type)
+    tableWindow.webContents.on('did-finish-load', () => {
+        tableWindow.webContents.send('send-analysis-data', jsonRawData, analysisType)
     })
 
     ipcMain.on('request-enrichment-plot', (_event, selectedTerms) => {
-        const pythonProcess = spawn('python', ['backend_src/gsea_plot.py', 'enrichment-plot', selectedTerms])
+        const pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'enrichment-plot', selectedTerms])
 
         pythonProcess.stdout.on('end', _data => {
             createPlotWindow(800, 600)
@@ -160,7 +198,7 @@ const createTableWindow = (jsonRawData, analysis_type) => {
     })
 
     ipcMain.on('request-dotplot', (_event, selectedColumn) => {
-        const pythonProcess = spawn('python', ['backend_src/gsea_plot.py', 'dotplot', selectedColumn])
+        const pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'dotplot', selectedColumn])
 
         pythonProcess.stdout.on('end', _data => {
             createPlotWindow(900, 500)
@@ -170,7 +208,7 @@ const createTableWindow = (jsonRawData, analysis_type) => {
     })
 
     ipcMain.on('request-heatmap', (_event, selectedRow) => {
-        const pythonProcess = spawn('python', ['backend_src/gsea_plot.py', 'heatmap', selectedRow])
+        const pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'heatmap', selectedRow])
 
         pythonProcess.stdout.on('end', _data => {
             createPlotWindow(900, 500)
@@ -189,7 +227,7 @@ const createTableWindow = (jsonRawData, analysis_type) => {
                 log.error('The selected column data file, to be passed to python script, couldn\'t be created')
         })
 
-        const pythonProcess = spawn('python', ['backend_src/gsea_plot.py', 'wordcloud', tmpFile.name])
+        const pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'wordcloud', tmpFile.name])
 
         pythonProcess.stdout.on('end', _data => {
             // Remove the tmp file
@@ -201,16 +239,45 @@ const createTableWindow = (jsonRawData, analysis_type) => {
         exitOnProcessFail(pythonProcess, 'The app failed while computing a plot')
     })
 
+    ipcMain.on('request-gene-set-info', (_event, selectedTerm) => {
+        if (!fs.existsSync(localPath('resources', 'msigdb.db')))
+            notifier.notify({
+                title: 'GSEAWrap error',
+                message: 'No Msig database was found',
+                wait: true
+            })
+        else {
+            const pythonProcess = spawn('python', [localPath('python', 'gene_set_info'), selectedTerm])
+
+            let jsonContent = ''
+
+            pythonProcess.stdout.on('data', data => {
+                jsonContent += data
+            })
+
+            pythonProcess.on('exit', code => {
+                if (code == 0)
+                    createGeneSetInfoWindow(jsonContent)
+                else
+                    notifier.notify({
+                        title: 'GSEAWrap error',
+                        message: 'No gene set data was found or an error was thrown while retrieving it',
+                        wait: true
+                    })
+            })
+        }
+    })
+
     tableWindow.maximize()
 
-    tableWindow.loadFile('web_pages/table.html')
+    tableWindow.loadFile(localPath('web', 'table'))
 }
 
+// Function that creates and handles the plot window
 const createPlotWindow = (customWidth, customHeight) => {
     const plotWindow = new BrowserWindow({
         width: customWidth,
-        height: customHeight,
-        autoHideMenuBar: true
+        height: customHeight
     })
 
     // Delete plot file when the window is closed
@@ -221,16 +288,37 @@ const createPlotWindow = (customWidth, customHeight) => {
         })
     })
 
-    plotWindow.loadFile('web_pages/plot.html')
+    plotWindow.loadFile(localPath('web', 'plot'))
 }
+
+// Function that creates and handles the gene set information window
+const createGeneSetInfoWindow = (geneSetInfo) => {
+    const geneSetInfoWindow = new BrowserWindow({
+        width: 600,
+        height: 400,
+        webPreferences: {
+            preload: localPath('preload', 'gene_set_info_preload')
+        }
+    })
+
+    geneSetInfoWindow.webContents.on('did-finish-load', () => {
+        geneSetInfoWindow.webContents.send('send-gene-set-data', geneSetInfo)
+    })
+
+    geneSetInfoWindow.loadFile(localPath('web', 'gene_set_info'))
+}
+
+//  Set up the app
+Menu.setApplicationMenu(null)
+app.disableHardwareAcceleration()
 
 app.whenReady().then(() => {
     // --- Debug
-    let data = fs.readFileSync('../test_data/gsea/test_result.json', 'utf8')
-    createTableWindow(data, 'gsea')
+    let data = fs.readFileSync('../test_data/preranked/test_result.json', 'utf8')
+    createTableWindow(data, 'gsea_preranked')
     // --- Debug
 
-    // createMainWindow()
+    //createMainWindow()
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0)
@@ -240,6 +328,7 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
+        // TODO: remove comments
         // fs.unlink('gsea_run.pkl', err => {
         //     if (err)
         //         log.error('Python session file gsea_run.pkl couldn\'t be deleted')
