@@ -321,14 +321,18 @@ const createGeneSetInfoWindow = (geneSetInfo) => {
 Menu.setApplicationMenu(null)
 app.disableHardwareAcceleration()
 
+// Needed for Windows Squirrel package
+if (require('electron-squirrel-startup')) 
+    app.quit();
+
 app.whenReady().then(() => {
 
     // --- Debug
-    let data = fs.readFileSync('../test_data/preranked/test_result.json', 'utf8')
-    createTableWindow(data, 'gsea_preranked')
+    // let data = fs.readFileSync('../test_data/preranked/test_result.json', 'utf8')
+    // createTableWindow(data, 'gsea_preranked')
     // --- Debug
 
-    // createMainWindow()
+    createMainWindow()
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0)
@@ -346,3 +350,4 @@ app.on('window-all-closed', () => {
 
         app.quit()
     }
+})

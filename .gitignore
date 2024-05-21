@@ -6,3 +6,5 @@ gsea_run.pkl
 /.vscode
 /GSEAWrap_logs
 /venv
+
+out/
