@@ -4,16 +4,12 @@ import matplotlib.pyplot as plt
 from gseapy import gseaplot, gseaplot2, dotplot, heatmap
 from io import StringIO
 import dill
-from operator import itemgetter
 import numpy as np
 import seaborn as sns
-from PIL import Image
 from wordcloud import WordCloud
-from nltk.corpus import stopwords
 import json
 
 # Read plot type argument passed by the script call
-# it's supposed either "enrichment-plot" or "dotplot"
 plot_type = sys.argv[1]
 
 # Load the saved python session, with all its variables
@@ -53,13 +49,28 @@ match plot_type:
     
     case "dotplot":
         selected_column = sys.argv[2]
-
-        dotplot(res.res2d,
+        selected_terms_raw = sys.argv[3]
+        
+        filtered_res = ""
+        
+        if (selected_terms_raw == "all"):
+            filtered_res = res.res2d
+        else:
+            # Convert the JSON-formatted terms in a Series
+            selected_terms = pd.read_json(StringIO(selected_terms_raw), typ="series").rename("Term")
+            
+            # Join the GSEA/GSEA preranked result with these terms
+            # i.e filter out from res.res2d all those rows not having a term contained in selected_terms
+            filtered_res = res.res2d.merge(selected_terms, how="inner", on="Term")
+            
+        dotplot(filtered_res,
                 column=selected_column,
                 title=selected_column + " dotplot",
                 cmap=plt.cm.viridis,
                 size=6,
-                figsize=(4,5), cutoff=0.25, show_ring=False,
+                figsize=(4,5), 
+                cutoff=0.25, 
+                show_ring=False,
                 ofname=PLOT_FILE)
         
     case "heatmap":
@@ -139,12 +150,12 @@ match plot_type:
         wc = WordCloud(width=800, 
                        height=500,
                        background_color="white",
-                       scale=4
-                       ).generate(data)
+                       scale=4).generate(data)
         
         wc.to_file(PLOT_FILE)
     
     case _:
-        print("Error: request plot doesn't exist")
+        print("Error: requested plot doesn't exist", file=sys.stderr)
+        exit(1)
 
 

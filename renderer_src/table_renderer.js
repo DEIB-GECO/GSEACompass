@@ -27,7 +27,7 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
     table = new DataTable('#dataTable', {
         data: jsonData,
         columns: [
-            { data: null, defaultContent: '' },
+            { data: 'Select', defaultContent: '' },
             { data: 'Term', title: 'Term' },
             { data: 'ES', title: 'ES' },
             { data: 'NES', title: 'NES' },
@@ -50,6 +50,11 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                 render: DataTable.render.select()
             }
         ],
+        search: {
+            // Enable regex search functionality, but disable the smart one
+            regex: true,
+            smart: false
+        },
         select: {
             style: 'multi',
             selector: 'td, th'
@@ -75,11 +80,11 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                                 enabled: false,
                                 action: () => {
                                     // Fetch the selected rows
-                                    let selectedRows = table.rows({ selected: true }).data()
-                                    let numSelectedRows = selectedRows.length
+                                    const selectedRows = table.rows({ selected: true }).data()
+                                    const numSelectedRows = selectedRows.length
 
                                     // Put each selected rows Term field in an array
-                                    let selectedTerms = []
+                                    const selectedTerms = []
                                     for (let i = 0; i < numSelectedRows; i++)
                                         selectedTerms[i] = selectedRows[i].Term
 
@@ -92,11 +97,23 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                                 name: 'dotplot',
                                 enabled: false,
                                 action: () => {
+                                    // Fetch the selected rows (if any selected)
+                                    const selectedRows = table.rows({ selected: true }).data()
+                                    const numSelectedRows = selectedRows.length
+
+                                    // Put each selected rows Term field in an array (if any selected)
+                                    const selectedTerms = []
+                                    for (let i = 0; i < numSelectedRows; i++)
+                                        selectedTerms[i] = selectedRows[i].Term
+
                                     // Fetch the selected column title (e.g FDR q-val)
-                                    let selectedColumn = table.columns({ selected: true }).titles()[0]
+                                    const selectedColumn = table.columns({ selected: true }).titles()[0]
 
                                     // Send the selected column title in JSON format
-                                    window.electronAPI.requestDotplot(selectedColumn)
+                                    if (numSelectedRows === 0)
+                                        window.electronAPI.requestDotplot(selectedColumn, 'all')
+                                    else
+                                        window.electronAPI.requestDotplot(selectedColumn, JSON.stringify(selectedTerms))
                                 }
                             },
                             {
@@ -105,7 +122,7 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                                 enabled: false,
                                 action: () => {
                                     // Fetch the selected row
-                                    let selectedRow = table.rows({ selected: true }).data()[0]
+                                    const selectedRow = table.rows({ selected: true }).data()[0]
 
                                     // Send the selected row in JSON format
                                     window.electronAPI.requestHeatmap(JSON.stringify(selectedRow))
@@ -117,11 +134,11 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                                 enabled: false,
                                 action: () => {
                                     // Fetch the selected rows
-                                    let selectedRows = table.rows({ selected: true }).data()
-                                    let numSelectedRows = selectedRows.length
+                                    const selectedRows = table.rows({ selected: true }).data()
+                                    const numSelectedRows = selectedRows.length
 
                                     // Put each selected rows Term and Lead_genes fields in an array of dictionaries
-                                    let selectedGenesets = []
+                                    const selectedGenesets = []
                                     for (let i = 0; i < numSelectedRows; i++)
                                         selectedGenesets[i] = {
                                             'term': selectedRows[i].Term, 
@@ -136,7 +153,7 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                                 enabled: false,
                                 action: () => {
                                     // Fetch the selected column data
-                                    let selectedColumn = table.columns({ selected: true }).data().toArray().toString()
+                                    const selectedColumn = table.columns({ selected: true }).data().toArray().toString()
 
                                     window.electronAPI.requestWordCloud(JSON.stringify(selectedColumn))
                                 }
@@ -155,7 +172,6 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                     {
                         extend: 'collection',
                         text: 'Export',
-                        enabled: false,
                         name: 'export',
                         buttons: [
                             {
@@ -189,24 +205,47 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
 
     // Every time a rows/column has been selected or deselected
     table.on('select deselect', () => {
-        let selectedRows = table.rows({ selected: true }).count()
-        let selectedColumns = table.columns({ selected: true }).count()
+        const selectedRows = table.rows({ selected: true }).count()
+        const selectedColumns = table.columns({ selected: true })
 
-        table.button(['export:name']).enable(selectedRows > 0 || selectedColumns > 0)
         table.button(['enrichmentPlot:name']).enable(selectedRows > 0 && selectedColumns === 0)
-        table.button(['dotplot:name']).enable(selectedRows === 0 && selectedColumns === 1)
+        table.button(['dotplot:name']).enable(selectedColumns === 1)
         table.button(['heatmap:name']).enable(selectedRows === 1 && analysisType === 'gsea')
         table.button(['iouPlot:name']).enable(selectedRows >= 2 && selectedColumns === 0)
-        table.button(['wordcloud:name']).enable(selectedColumns === 1)
+        table.button(['wordcloud:name']).enable(selectedColumns.count() === 1 && (selectedColumns.titles()[0] === "Term" || selectedColumns.titles()[0] === "Lead_genes"))
     })
 
     // Every time a row is double clicked on
     table.on('dblclick', 'tr', (event) => {
-        let dblClickedTr = event.target.closest('tr')
-        let dblClickedTerm = table.row(dblClickedTr).data().Term
+        const dblClickedTr = event.target.closest('tr')
+        const dblClickedTerm = table.row(dblClickedTr).data().Term
 
         window.electronAPI.requestGeneSetInfo(dblClickedTerm)
     })
+
+    const maxFDRObj = document.querySelector('#maxFDR')
+    const maxNOMObj = document.querySelector('#maxNOM')
+
+    // Custom filtering function for FDR q-val and NOM p-val
+    table.search.fixed('range', (_searchStr, data, _index) => {
+        const maxFDR = parseFloat(maxFDRObj.value)
+        const maxNOM = parseFloat(maxNOMObj.value)
+        const FDR = parseFloat(data['FDR q-val'])
+        const NOM = parseFloat(data['NOM p-val'])
+    
+        return (isNaN(maxFDR) && isNaN(maxNOM)) ||
+               (isNaN(maxFDR) && NOM <= maxNOM) ||
+               (isNaN(maxNOM) && FDR <= maxFDR) ||
+               (NOM <= maxNOM && FDR <= maxFDR)
+    })
+    
+    // Changes to the inputs of FDR q-val or NOM p-val filter fields will trigger a redraw of the table
+    maxFDRObj.addEventListener('input', () => {
+        table.draw()
+    })
+    maxNOMObj.addEventListener('input', () => {
+        table.draw()
+    }) 
 })
 
 

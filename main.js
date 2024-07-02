@@ -12,34 +12,24 @@ const currentDate = () => {
     return new Date().toISOString().slice(0, 10)
 }
 
-// Utility function to be called when there's a major failure, because of which the app must exit
-const fail = (info, error) => {
-    console.log(info + error)
-    log.error('\n\n=================' + info + '\n' + error)
-
-    // Launch OS notification
-    notifier.notify({
-        title: 'GSEAWrap failed',
-        message: info + ', you can find the log in ' + log.transports.file.getFile(),
-        wait: true
-    })
-
-    app.exit(-1)
-}
-
-// Utility function that collects the stderr output and make the app fail in case the passed
-// process returns a code different from 0
-const exitOnProcessFail = (process, info) => {
-    let stderrChunks = []
+// Utility function that collects the stderr output, shows a failure popup in case the passed
+// process returns a code different from 0 (unexpected exit) and logs it in a file
+const popupOnProcessFail = (process, info) => {
+    let stderrContent = ''
 
     process.stderr.on('data', (data) => {
-        stderrChunks = stderrChunks.concat(data)
+        stderrContent += data
     })
 
     process.on('exit', (code) => {
         if (code !== 0) {
-            let stderrContent = Buffer.concat(stderrChunks).toString()
-            fail(info, stderrContent)
+            dialog.showMessageBox({
+                message: stderrContent,
+                type: 'error',
+                title: 'Failure'
+            })
+
+            log.error('\n === Error\n======================== ' + info + '\n' + stderrContent)
         }
     })
 }
@@ -121,21 +111,30 @@ const createGseaWindow = () => {
         }
     })
 
-    // Message sent by the TableWindow renderer when a GSEA analysis has been requested
+    // Message sent by the GseaWindow renderer when a GSEA analysis has been requested
     ipcMain.on('send-data-gsea', (_event, geneSetsPath, numPermutations, expressionSet, phenotypeLabels, remapOption, chipPath) => {
-        const pythonProcess = spawn('python', [localPath('python', 'gsea'),
-            geneSetsPath, numPermutations, expressionSet, phenotypeLabels, remapOption, chipPath])
+        const pythonProcess = spawn('python', [localPath('python', 'gsea'), geneSetsPath, numPermutations, expressionSet, phenotypeLabels, remapOption, chipPath])
 
         let jsonContent = ''
 
         pythonProcess.stdout.on('data', (data) => {
             jsonContent += data
         })
-        pythonProcess.stdout.on('end', () => {
-            createTableWindow(jsonContent, 'gsea')
+        pythonProcess.on('exit', (code) => {
+            if (code === 0)
+                createTableWindow(jsonContent, 'gsea')
         })
 
-        exitOnProcessFail(pythonProcess, 'The app failed while computing the GSEA analysis')
+        popupOnProcessFail(pythonProcess, 'The app failed while computing the GSEA analysis')
+    })
+
+    // Request from the GseaWindow renderer to show an helper popup
+    ipcMain.on('show-helper-popup', (_event, helpString) => {
+        dialog.showMessageBox({
+            message: helpString,
+            type: 'info',
+            title: 'Helper'
+        })
     })
 
     gseaWindow.loadFile(localPath('web', 'gsea'))
@@ -151,21 +150,31 @@ const createGseaPrerankedWindow = () => {
         }
     })
 
-    // Message sent by the TableWindow renderer when a preranked analysis has been requested
-    ipcMain.on('send-data-preranked', (_event, geneSetsPath, numPermutations, rankedListPath, collapseRemapOption, chipPath) => {
+    // Message sent by the GseaPrerankedWindow renderer when a preranked analysis has been requested
+    ipcMain.on('send-data-preranked', (_event, geneSetsPath, numPermutations, rankedListPath, remapOption, chipPath) => {
         const pythonProcess = spawn('python', [localPath('python', 'gsea_preranked'),
-            geneSetsPath, numPermutations, rankedListPath, collapseRemapOption, chipPath])
+            geneSetsPath, numPermutations, rankedListPath, remapOption, chipPath])
 
         let jsonContent = ''
 
         pythonProcess.stdout.on('data', (data) => {
             jsonContent += data
         })
-        pythonProcess.stdout.on('end', () => {
-            createTableWindow(jsonContent, 'gsea_preranked')
+        pythonProcess.on('exit', (code) => {
+            if (code === 0)
+                createTableWindow(jsonContent, 'gsea_preranked')
         })
 
-        exitOnProcessFail(pythonProcess, 'The app failed while computing the preranked analysis')
+        popupOnProcessFail(pythonProcess, 'The app failed while computing the preranked analysis')
+    })
+
+    // Request from the GseaPrerankedWindow renderer to show an helper popup
+    ipcMain.on('show-helper-popup', (_event, helpString) => {
+        dialog.showMessageBox({
+            message: helpString,
+            type: 'info',
+            title: 'Helper'
+        })
     })
 
     gseaPrerankedWindow.loadFile(localPath('web', 'gsea_preranked'))
@@ -192,17 +201,17 @@ const createTableWindow = (jsonRawData, analysisType) => {
             createPlotWindow(800, 600)
         })
 
-        exitOnProcessFail(pythonProcess, 'The app failed while computing a plot')
+        popupOnProcessFail(pythonProcess, 'The app failed while computing the enrichment plot')
     })
 
-    ipcMain.on('request-dotplot', (_event, selectedColumn) => {
-        const pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'dotplot', selectedColumn])
+    ipcMain.on('request-dotplot', (_event, selectedColumn, selectedTerms) => {
+        const pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'dotplot', selectedColumn, selectedTerms])
 
         pythonProcess.stdout.on('end', () => {
             createPlotWindow(900, 500)
         })
 
-        exitOnProcessFail(pythonProcess, 'The app failed while computing a plot')
+        popupOnProcessFail(pythonProcess, 'The app failed while computing the dotplot')
     })
 
     ipcMain.on('request-heatmap', (_event, selectedRow) => {
@@ -212,7 +221,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
             createPlotWindow(900, 500)
         })
 
-        exitOnProcessFail(pythonProcess, 'The app failed while computing a plot')
+        popupOnProcessFail(pythonProcess, 'The app failed while computing the heatmap')
     })
 
     ipcMain.on('request-iou-plot', (_event, selectedGenesets) => {
@@ -222,7 +231,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
             createPlotWindow(800, 600)
         })
 
-        exitOnProcessFail(pythonProcess, 'The app failed while computing a plot')
+        popupOnProcessFail(pythonProcess, 'The app failed while computing the intersection over union plot')
     })
 
     ipcMain.on('request-word-cloud', (_event, selectedColumn) => {
@@ -244,7 +253,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
             createPlotWindow(800, 600)
         })
 
-        exitOnProcessFail(pythonProcess, 'The app failed while computing a plot')
+        popupOnProcessFail(pythonProcess, 'The app failed while computing the wordcloud')
     })
 
     ipcMain.on('request-gene-set-info', (_event, selectedTerm) => {
@@ -292,7 +301,7 @@ const createPlotWindow = (customWidth, customHeight) => {
     plotWindow.on('close', _event => {
         fs.unlink('gsea_plot.png', (err) => {
             if (err)
-                log.error('Plot file gsea_plot.png couldn\'t be deleted')
+                log.error('Temporary plot file gsea_plot.png couldn\'t be deleted')
         })
     })
 
@@ -317,21 +326,20 @@ const createGeneSetInfoWindow = (geneSetInfo) => {
 }
 
 //  Set up the app
-Menu.setApplicationMenu(null)
+// Menu.setApplicationMenu(null)
 app.disableHardwareAcceleration()
 
 // Needed for Windows Squirrel package
 if (require('electron-squirrel-startup')) 
-    app.quit();
+    app.quit()
 
 app.whenReady().then(() => {
-
     // --- Debug
-    let data = fs.readFileSync('../test_data/preranked/test_result.json', 'utf8')
-    createTableWindow(data, 'gsea_preranked')
+    // let data = fs.readFileSync('../test_data/preranked/test_result.json', 'utf8')
+    // createTableWindow(data, 'gsea_preranked')
     // --- Debug
 
-    // createMainWindow()
+    createMainWindow()
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0)
@@ -342,7 +350,7 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         // TODO: remove comments
-        // fs.unlink('gsea_run.pkl', err => {
+        // fs.unlink('gsea_run.pkl', (err) => {
         //     if (err)
         //         log.error('Python session file gsea_run.pkl couldn\'t be deleted')
         // })

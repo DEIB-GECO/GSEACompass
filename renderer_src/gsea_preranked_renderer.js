@@ -13,3 +13,5 @@ submitBtn.addEventListener("click", (event) => {
 
     window.electronAPI.sendDataPreranked(geneSetsPath, numPermutations, rankedListPath, remapOption, chipPath)
 })
+
+const showHelper = (helpString) => window.electronAPI.showHelperPopup(helpString)
