@@ -205,14 +205,15 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
 
     // Every time a rows/column has been selected or deselected
     table.on('select deselect', () => {
-        const selectedRows = table.rows({ selected: true }).count()
+        const numSelectedRows = table.rows({ selected: true }).count()
         const selectedColumns = table.columns({ selected: true })
+        const numSelectedCols = selectedColumns.count()
 
-        table.button(['enrichmentPlot:name']).enable(selectedRows > 0 && selectedColumns === 0)
-        table.button(['dotplot:name']).enable(selectedColumns === 1)
-        table.button(['heatmap:name']).enable(selectedRows === 1 && analysisType === 'gsea')
-        table.button(['iouPlot:name']).enable(selectedRows >= 2 && selectedColumns === 0)
-        table.button(['wordcloud:name']).enable(selectedColumns.count() === 1 && (selectedColumns.titles()[0] === "Term" || selectedColumns.titles()[0] === "Lead_genes"))
+        table.button(['enrichmentPlot:name']).enable(numSelectedRows > 0 && numSelectedCols === 0)
+        table.button(['dotplot:name']).enable(numSelectedCols === 1)
+        table.button(['heatmap:name']).enable(numSelectedRows === 1 && analysisType === 'gsea')
+        table.button(['iouPlot:name']).enable(numSelectedRows >= 2 && numSelectedCols === 0)
+        table.button(['wordcloud:name']).enable(numSelectedCols === 1 && (selectedColumns.titles()[0] === "Term" || selectedColumns.titles()[0] === "Lead_genes"))
     })
 
     // Every time a row is double clicked on

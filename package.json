@@ -1,7 +1,7 @@
 {
   "name": "gseawrap",
   "version": "1.0.0",
-  "description": "",
+  "description": "gseawrap",
   "main": "main.js",
   "scripts": {
     "start": "electron-forge start",
@@ -25,6 +25,7 @@
   "dependencies": {
     "@electron-forge/maker-flatpak": "^7.4.0",
     "electron-log": "^5.1.2",
+    "electron-prompt": "^1.7.0",
     "electron-squirrel-startup": "^1.0.1",
     "node-notifier": "^10.0.1",
     "tmp": "^0.2.3"

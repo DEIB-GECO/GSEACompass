@@ -14,22 +14,27 @@ const currentDate = () => {
 
 // Utility function that collects the stderr output, shows a failure popup in case the passed
 // process returns a code different from 0 (unexpected exit) and logs it in a file
-const popupOnProcessFail = (process, info) => {
+const popupOnProcessFail = (process) => {
     let stderrContent = ''
+    let stdoutContent = ''
 
     process.stderr.on('data', (data) => {
         stderrContent += data
     })
 
+    process.stdout.on('data', (data) => {
+        stdoutContent += data
+    })
+
     process.on('exit', (code) => {
         if (code !== 0) {
             dialog.showMessageBox({
-                message: stderrContent,
+                message: stdoutContent,
                 type: 'error',
                 title: 'Failure'
             })
 
-            log.error('\n === Error\n======================== ' + info + '\n' + stderrContent)
+            log.error('\n=== Error ===\nError description: ' + stdoutContent + '\nStderr trace:\n' + stderrContent + '\n========================\n')
         }
     })
 }
@@ -125,7 +130,7 @@ const createGseaWindow = () => {
                 createTableWindow(jsonContent, 'gsea')
         })
 
-        popupOnProcessFail(pythonProcess, 'The app failed while computing the GSEA analysis')
+        popupOnProcessFail(pythonProcess)
     })
 
     // Request from the GseaWindow renderer to show an helper popup
@@ -165,7 +170,7 @@ const createGseaPrerankedWindow = () => {
                 createTableWindow(jsonContent, 'gsea_preranked')
         })
 
-        popupOnProcessFail(pythonProcess, 'The app failed while computing the preranked analysis')
+        popupOnProcessFail(pythonProcess)
     })
 
     // Request from the GseaPrerankedWindow renderer to show an helper popup
@@ -195,13 +200,15 @@ const createTableWindow = (jsonRawData, analysisType) => {
     })
 
     ipcMain.on('request-enrichment-plot', (_event, selectedTerms) => {
+        
+
         const pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'enrichment-plot', selectedTerms])
 
         pythonProcess.stdout.on('end', () => {
             createPlotWindow(800, 600)
         })
 
-        popupOnProcessFail(pythonProcess, 'The app failed while computing the enrichment plot')
+        popupOnProcessFail(pythonProcess)
     })
 
     ipcMain.on('request-dotplot', (_event, selectedColumn, selectedTerms) => {
@@ -211,7 +218,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
             createPlotWindow(900, 500)
         })
 
-        popupOnProcessFail(pythonProcess, 'The app failed while computing the dotplot')
+        popupOnProcessFail(pythonProcess)
     })
 
     ipcMain.on('request-heatmap', (_event, selectedRow) => {
@@ -221,7 +228,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
             createPlotWindow(900, 500)
         })
 
-        popupOnProcessFail(pythonProcess, 'The app failed while computing the heatmap')
+        popupOnProcessFail(pythonProcess)
     })
 
     ipcMain.on('request-iou-plot', (_event, selectedGenesets) => {
@@ -231,7 +238,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
             createPlotWindow(800, 600)
         })
 
-        popupOnProcessFail(pythonProcess, 'The app failed while computing the intersection over union plot')
+        popupOnProcessFail(pythonProcess)
     })
 
     ipcMain.on('request-word-cloud', (_event, selectedColumn) => {
@@ -253,7 +260,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
             createPlotWindow(800, 600)
         })
 
-        popupOnProcessFail(pythonProcess, 'The app failed while computing the wordcloud')
+        popupOnProcessFail(pythonProcess)
     })
 
     ipcMain.on('request-gene-set-info', (_event, selectedTerm) => {
