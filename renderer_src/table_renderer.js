@@ -69,7 +69,7 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                 }
             },
             topStart: {
-                // Drop down button to generate plots
+                // Drop down menu of buttons to generate plots
                 buttons: [
                     {
                         extend: 'collection',
@@ -248,10 +248,11 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
     // Every time a row is double clicked on
     table.on('dblclick', 'tr', (event) => {
         const dblClickedTr = event.target.closest('tr')
+        console.log(dblClickedTr)
 
         // If its a data row (parent is tbody and not thead)
         // to prevent this behavior from happening when the column selection row is double clicked
-        if (dblClickedTerm.parentElemet == 'tbody') {
+        if (dblClickedTr.parentElement.tagName == 'TBODY') {
             const dblClickedTerm = table.row(dblClickedTr).data().Term
             window.electronAPI.requestGeneSetInfo(dblClickedTerm)
         }

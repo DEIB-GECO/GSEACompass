@@ -22,6 +22,8 @@ match plot_type:
 
     case "enrichment-plot":
         selected_terms_raw = sys.argv[2]
+        size_x = float(sys.argv[3])
+        size_y = float(sys.argv[4])
 
         # Convert the JSON-formatted input in a Series
         selected_terms = pd.read_json(StringIO(selected_terms_raw))[0]
@@ -30,7 +32,7 @@ match plot_type:
         if len(selected_terms) == 1:
             gseaplot(rank_metric=res.ranking, 
                     term=selected_terms[0],
-                    figsize=(4,5),
+                    figsize=(size_x,size_y),
                     ofname=PLOT_FILE,
                     **res.results[selected_terms[0]])
         
@@ -44,12 +46,14 @@ match plot_type:
                     hits=hits,
                     rank_metric=res.ranking,
                     legend_kws={"loc": (0, 1.1)}, 
-                    figsize=(4,5),
+                    figsize=(size_x,size_y),
                     ofname=PLOT_FILE)
     
     case "dotplot":
         selected_column = sys.argv[2]
         selected_terms_raw = sys.argv[3]
+        size_x = float(sys.argv[4])
+        size_y = float(sys.argv[5])
         
         filtered_res = ""
         
@@ -65,13 +69,15 @@ match plot_type:
                 title=selected_column + " dotplot",
                 cmap=plt.cm.viridis,
                 size=6,
-                figsize=(4,5), 
+                figsize=(size_x,size_y), 
                 cutoff=0.25, 
                 show_ring=False,
                 ofname=PLOT_FILE)
         
     case "heatmap":
         selected_row_raw = sys.argv[2]
+        size_x = float(sys.argv[3])
+        size_y = float(sys.argv[4])
 
         # Convert the JSON-formatted input in a Series
         selected_row = pd.read_json(StringIO(selected_row_raw), typ="series")
@@ -82,11 +88,13 @@ match plot_type:
         heatmap(df=res.heatmat.loc[selected_genes],
                 z_score=0, 
                 title=selected_term,
-                figsize=(14,4),
+                figsize=(size_x,size_y),
                 ofname=PLOT_FILE)
         
     case "intersection-over-union":
         selected_genesets_raw = sys.argv[2]
+        size_x = float(sys.argv[3])
+        size_y = float(sys.argv[4])
         
         # Convert the JSON-formatted input in a dictionary
         selected_genesets = json.loads(selected_genesets_raw)
@@ -122,7 +130,7 @@ match plot_type:
         mask = np.triu(np.ones_like(iou_matrix, dtype=bool), k=1)
         
         # Generate the heatmap
-        fig, ax = plt.subplots(figsize=(7, 7))
+        fig, ax = plt.subplots(figsize=(size_x, size_y))
         ax.set_aspect('equal')
         sns.heatmap(iou_matrix, mask=mask, annot=False, cmap='YlGnBu', ax=ax, linewidths=0.5, linecolor='lightgrey')
 
@@ -136,6 +144,8 @@ match plot_type:
         
     case "wordcloud":
         selected_column_file_path = sys.argv[2]
+        size_x = int(sys.argv[3])
+        size_y = int(sys.argv[4])
         
         # Read selected column data from file path passed as CLI arguments
         file = open(selected_column_file_path, "r")
@@ -144,8 +154,8 @@ match plot_type:
         
         data = selected_column.replace("_", " ").replace(";", " ").replace(",", " ")
         
-        wc = WordCloud(width=800, 
-                       height=500,
+        wc = WordCloud(width=size_x, 
+                       height=size_y,
                        background_color="white",
                        scale=4).generate(data)
         

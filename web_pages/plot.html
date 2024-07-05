@@ -2,57 +2,87 @@
 
 <html>
 
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>GSEAWrap</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GSEAWrap</title>
 
-        <script src="../renderer_src/plot_renderer.js" defer></script>
+    <script src="../renderer_src/plot_renderer.js" defer></script>
 
-        <script src="../dependencies/panzoom/panzoom.min.js"></script>
-        <link rel="stylesheet" href="../dependencies/datatables/datatables.css">
+    <script src="../dependencies/panzoom/panzoom.min.js"></script>
+    <link rel="stylesheet" href="../dependencies/datatables/datatables.css">
 
+    <style>
+        body {
+            overflow: hidden;
+            margin: 0px;
+            padding: 0px;
+        }
 
-        <style>
-            body {
-                overflow: hidden;
-            }
+        .center-fit {
+            height: 80vh;
+            width: auto;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
 
-            .center-fit {
-                height: 80vh;
-                width: auto;
-                display: block;
-                margin-left: auto;
-                margin-right: auto;
-            }
+        .custom-btn {
+            width: 12%;
+            border-radius: 18px;
+            font-size: 300%;
+            position: sticky;
+            display: block;
+            float: left;
+        }
 
-            .custom-btn {
-                width: 12%;
-                aspect-ratio: 4.5/2;
-                border-radius: 25px;
-                font-size: 290%;
-                margin: 10px;
-                position: sticky;
-                display: block;
-                float: left;
-            }
-        </style>
-    </head>
+        .custom-input {
+            border-radius: 18px;
+            height: 90px !important;
+            font-size: 250%;
+        }
+    </style>
+</head>
 
-    <body>
-        <!-- Image -->
-        <div>
-            <img src="../gsea_plot.png" class="center-fit" id="panzoom-img" />
+<body>
+    <!-- Image -->
+    <div>
+        <img src="../gsea_plot.png" class="center-fit" id="panzoom-img" />
+    </div>
+
+    <!-- Hidden anchor for saving the image -->
+    <a id="save-hidden-anchor" href="../gsea_plot.png" download hidden></a>
+
+    <!-- Buttons -->
+    <div class="mx-4">
+        <div class="row mb-4">
+            <!-- Save button -->
+            <div class="btn-group col">
+                <button type="button" class="btn btn-primary custom-btn" id="save-btn">Save</button>
+            </div>
+
+            <!-- Zoom in/out buttons -->
+            <div class="btn-group col" role="group">
+                <button class="btn btn-secondary custom-btn" id="zoom-in-btn">Zoom In</button>
+                <button class="btn btn-secondary custom-btn" id="zoom-out-btn">Zoom Out</button>
+            </div>
         </div>
-
-        <!-- Buttons -->
-        <div>
-            <a href="../gsea_plot.png" download="gseawrap_plot">
-                <button type="button" class="btn btn-primary btn-lg custom-btn">Save</button>
-            </a>
-            <button class="btn btn-secondary custom-btn" id="zoom-in">Zoom In</button>
-            <button class="btn btn-secondary custom-btn" id="zoom-out">Zoom Out</button>
+        <div class="row">
+            <!-- Size inputs -->
+            <div class="col">
+                <input type="number" step="any" name="x-size" id="x-size" class="form-control custom-input" placeholder="New width" aria-label="new-width" />
+            </div>
+            <div class="col">
+                <input type="number" step="any" name="y-size" id="y-size" class="form-control custom-input" placeholder="New heigth" aria-label="new-width" />
+            </div>
+            
+            <!-- Chane size button -->
+            <div class="btn-group col">
+                <button class="btn btn-secondary custom-btn" id="update-size-btn">Update size</button>
+            </div>
         </div>
-    </body>
+    </div>
+
+</body>
 
 </html>

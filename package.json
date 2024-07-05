@@ -26,7 +26,6 @@
     "@electron-forge/maker-flatpak": "^7.4.0",
     "electron-log": "^5.1.2",
     "electron-squirrel-startup": "^1.0.1",
-    "node-notifier": "^10.0.1",
     "tmp": "^0.2.3"
   }
 }

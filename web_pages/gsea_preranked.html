@@ -19,7 +19,7 @@
             <!-- Gene sets input -->
             <div class="mb-3">
                 <label for="gene_sets" class="form-label">Gene sets database (.gmt, .gmx)</label>
-                <img src="../icons/question_16px.svg" style="cursor: pointer; padding-left: 5px;" 
+                <img src="../icons/question_16px.svg" style="cursor: pointer; padding-left: 5px;"
                     onclick="showHelper('A gene sets file defines one or more gene sets. For each gene set, the file contains the gene set name and the list of genes in that gene set. A gene sets file is a tab-delimited text file in gmx or gmt format.')" />
                 <input type="file" accept=".gmt, .gmx" name="gene_sets" id="gene_sets" class="form-control" required />
             </div>
@@ -54,8 +54,7 @@
                         <label for="remap" class="form-check-label">Remap</label>
                     </div>
                     <div class="form-check">
-                        <input type="radio" id="none" name="remap" value="none" checked
-                            class="form-check-input" />
+                        <input type="radio" id="none" name="remap" value="none" checked class="form-check-input" />
                         <label for="none" class="form-check-label">Do nothing</label>
                     </div>
                 </fieldset>
@@ -68,7 +67,7 @@
                     onclick="showHelper('A chip annotations file lists each identifier used in a platform and its matching gene symbol in another platform. A chip annotations file is a tab-delimited text file in chip format.')" />
                 <input type="file" accept=".chip" name="chip" id="chip" class="form-control" />
             </div>
-            
+
             <div class="col-12 mb-3">
                 <button type="button" id="submit" class="btn btn-primary">Submit</button>
             </div>
