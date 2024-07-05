@@ -246,6 +246,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         const tmpFile = tmp.fileSync();
 
         // Write to the tmp file the selected column data
+        // Needed since, most of the times, lead_gene data are too long to be passed as argument
         fs.writeFileSync(tmpFile.name, selectedColumn, (err) => {
             if(err)
                 log.error('The selected column data file, to be passed to python script, couldn\'t be created')

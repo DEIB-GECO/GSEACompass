@@ -8,7 +8,7 @@ let exportColSelector = (idx, _data, _node) => {
     // If no column has been selected
     else
         // Return true (export) for all columns except the first one (checkbox)
-        return idx != 0;
+        return idx != 0
 }
 
 let table = ''
@@ -27,7 +27,7 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
     table = new DataTable('#dataTable', {
         data: jsonData,
         columns: [
-            { data: 'Select', defaultContent: '' },
+            { data: 'Select', title: '' },
             { data: 'Term', title: 'Term' },
             { data: 'ES', title: 'ES' },
             { data: 'NES', title: 'NES' },
@@ -57,7 +57,8 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
         },
         select: {
             style: 'multi',
-            selector: 'td, th'
+            selector: 'td:first-child, th',
+            headerCheckbox: false
         },
         fixedHeader: true,
         colReorder: true,
@@ -97,23 +98,29 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                                 name: 'dotplot',
                                 enabled: false,
                                 action: () => {
-                                    // Fetch the selected rows (if any selected)
-                                    const selectedRows = table.rows({ selected: true }).data()
-                                    const numSelectedRows = selectedRows.length
-
-                                    // Put each selected rows Term field in an array (if any selected)
-                                    const selectedTerms = []
-                                    for (let i = 0; i < numSelectedRows; i++)
-                                        selectedTerms[i] = selectedRows[i].Term
-
                                     // Fetch the selected column title (e.g FDR q-val)
                                     const selectedColumn = table.columns({ selected: true }).titles()[0]
 
-                                    // Send the selected column title in JSON format
-                                    if (numSelectedRows === 0)
-                                        window.electronAPI.requestDotplot(selectedColumn, 'all')
+                                    // Fetch the selected rows
+                                    const selectedRows = table.rows({ selected: true }).data()
+
+                                    // Fetch the visible rows
+                                    const visibleRows = table.rows({ search: 'applied' }).data()
+
+                                    let rows = ''
+                                    const selectedTerms = []
+
+                                    if (selectedRows.length == 0)
+                                        rows = visibleRows
                                     else
-                                        window.electronAPI.requestDotplot(selectedColumn, JSON.stringify(selectedTerms))
+                                        rows = selectedRows
+
+                                    // Put each chosen row term in an array
+                                    for (let i = 0; i < rows.length; i++)
+                                        selectedTerms[i] = rows[i].Term
+
+                                    // Send the selected column title in JSON format
+                                    window.electronAPI.requestDotplot(selectedColumn, JSON.stringify(selectedTerms))
                                 }
                             },
                             {
@@ -141,8 +148,9 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                                     const selectedGenesets = []
                                     for (let i = 0; i < numSelectedRows; i++)
                                         selectedGenesets[i] = {
-                                            'term': selectedRows[i].Term, 
-                                            'lead_genes': selectedRows[i].Lead_genes.split(';') }
+                                            'term': selectedRows[i].Term,
+                                            'lead_genes': selectedRows[i].Lead_genes.split(';')
+                                        }
 
                                     window.electronAPI.requestIOUPlot(JSON.stringify(selectedGenesets))
                                 }
@@ -152,18 +160,39 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                                 name: 'wordcloud',
                                 enabled: false,
                                 action: () => {
-                                    // Fetch the selected column data
-                                    const selectedColumn = table.columns({ selected: true }).data().toArray().toString()
+                                    // Fetch the selected column title (e.g FDR q-val)
+                                    const selectedColumnHeader = table.columns({ selected: true }).titles()[0]
 
-                                    window.electronAPI.requestWordCloud(JSON.stringify(selectedColumn))
+                                    // Fetch the selected rows
+                                    const selectedRows = table.rows({ selected: true }).data()
+
+                                    // Fetch the visible rows
+                                    const visibleRows = table.rows({ search: 'applied' }).data()
+
+                                    let rows = ''
+                                    const selectedStrings = []
+
+                                    if (selectedRows.length === 0)
+                                        rows = visibleRows
+                                    else
+                                        rows = selectedRows
+
+                                    // Put each chosen row field (that of the selected column) in an array
+                                    for (let i = 0; i < rows.length; i++)
+                                        selectedStrings[i] = rows[i][selectedColumnHeader]
+
+
+                                    window.electronAPI.requestWordCloud(JSON.stringify(selectedStrings))
                                 }
                             }
                         ]
                     },
                     {
-                        extend: 'collection',
-                        text: 'Selection options',
-                        buttons: ['selectAll', 'selectNone', 'selectRows', 'selectColumns']
+                        text: 'Deselect all',
+                        action: () => {
+                            table.columns().deselect()
+                            table.rows().deselect()
+                        }
                     }
                 ]
             },
@@ -210,7 +239,7 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
         const numSelectedCols = selectedColumns.count()
 
         table.button(['enrichmentPlot:name']).enable(numSelectedRows > 0 && numSelectedCols === 0)
-        table.button(['dotplot:name']).enable(numSelectedCols === 1)
+        table.button(['dotplot:name']).enable(numSelectedCols === 1 && selectedColumns.titles()[0] !== "Term" && selectedColumns.titles()[0] !== "Lead_genes")
         table.button(['heatmap:name']).enable(numSelectedRows === 1 && analysisType === 'gsea')
         table.button(['iouPlot:name']).enable(numSelectedRows >= 2 && numSelectedCols === 0)
         table.button(['wordcloud:name']).enable(numSelectedCols === 1 && (selectedColumns.titles()[0] === "Term" || selectedColumns.titles()[0] === "Lead_genes"))
@@ -219,9 +248,13 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
     // Every time a row is double clicked on
     table.on('dblclick', 'tr', (event) => {
         const dblClickedTr = event.target.closest('tr')
-        const dblClickedTerm = table.row(dblClickedTr).data().Term
 
-        window.electronAPI.requestGeneSetInfo(dblClickedTerm)
+        // If its a data row (parent is tbody and not thead)
+        // to prevent this behavior from happening when the column selection row is double clicked
+        if (dblClickedTerm.parentElemet == 'tbody') {
+            const dblClickedTerm = table.row(dblClickedTr).data().Term
+            window.electronAPI.requestGeneSetInfo(dblClickedTerm)
+        }
     })
 
     const maxFDRObj = document.querySelector('#maxFDR')
@@ -233,20 +266,62 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
         const maxNOM = parseFloat(maxNOMObj.value)
         const FDR = parseFloat(data['FDR q-val'])
         const NOM = parseFloat(data['NOM p-val'])
-    
+
         return (isNaN(maxFDR) && isNaN(maxNOM)) ||
-               (isNaN(maxFDR) && NOM <= maxNOM) ||
-               (isNaN(maxNOM) && FDR <= maxFDR) ||
-               (NOM <= maxNOM && FDR <= maxFDR)
+            (isNaN(maxFDR) && NOM <= maxNOM) ||
+            (isNaN(maxNOM) && FDR <= maxFDR) ||
+            (NOM <= maxNOM && FDR <= maxFDR)
     })
-    
+
     // Changes to the inputs of FDR q-val or NOM p-val filter fields will trigger a redraw of the table
     maxFDRObj.addEventListener('input', () => {
         table.draw()
     })
     maxNOMObj.addEventListener('input', () => {
         table.draw()
-    }) 
+    })
+
+    // Add new column selection row in table head
+    const selectorHeader = document.createElement('tr')
+    document.querySelector('thead').appendChild(selectorHeader)
+
+    // For each column
+    for (let i = 0; i < table.columns().count(); i++) {
+        // Add a new cell for each column to the column selection row
+        const selector = document.createElement('td')
+        selector.style = 'text-align:center;'
+        selectorHeader.appendChild(selector)
+
+        // If it's not the first (not the row selection column)
+        if (i != 0) {
+            // Add a checkbox to the cell
+            selector.innerHTML = '<input aria-label="Select column" class="dt-select-checkbox" id="select-column" type="checkbox">'
+            const checkbox = selector.firstChild
+
+            // TODO: finish this
+            // selector.addEventListener('click', (event) => {
+            //     checkbox.checked = !checkbox.checked
+            //     if (checkbox.checked == true) 
+            //         table.column(i).select()
+            //     else
+            //         table.column(i).deselect()
+            // })
+
+            // Select/deselect the corresponding column when checkbox clicked
+            checkbox.addEventListener('change', (event) => {
+                if (checkbox.checked == true) 
+                    table.column(i).select()
+                else
+                    table.column(i).deselect()
+            })
+
+            // If anyone deselects a column, uncheck the corresponding checkbox
+            table.on('deselect', (_event, _dt, type, index) => {
+                if (type == 'column' && index.includes(i))
+                    checkbox.checked = false
+            })
+        }
+    }
 })
 
 

@@ -53,15 +53,12 @@ match plot_type:
         
         filtered_res = ""
         
-        if (selected_terms_raw == "all"):
-            filtered_res = res.res2d
-        else:
-            # Convert the JSON-formatted terms in a Series
-            selected_terms = pd.read_json(StringIO(selected_terms_raw), typ="series").rename("Term")
-            
-            # Join the GSEA/GSEA preranked result with these terms
-            # i.e filter out from res.res2d all those rows not having a term contained in selected_terms
-            filtered_res = res.res2d.merge(selected_terms, how="inner", on="Term")
+        # Convert the JSON-formatted terms in a Series
+        selected_terms = pd.read_json(StringIO(selected_terms_raw), typ="series").rename("Term")
+        
+        # Join the GSEA/GSEA preranked result with these terms
+        # i.e filter out from res.res2d all those rows not having a term contained in selected_terms
+        filtered_res = res.res2d.merge(selected_terms, how="inner", on="Term")
             
         dotplot(filtered_res,
                 column=selected_column,
