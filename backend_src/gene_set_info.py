@@ -1,7 +1,12 @@
 import sqlite3
-import os
+import os.path
 import sys
 import json
+
+# Utility function to exit on error
+def errorAndExit(errorString):
+    print(errorString)
+    exit(1)
 
 # Utility function to get SQLite results entries as dictionaries
 def row_to_dict(cursor: sqlite3.Cursor, row: sqlite3.Row) -> dict:
@@ -10,10 +15,11 @@ def row_to_dict(cursor: sqlite3.Cursor, row: sqlite3.Row) -> dict:
         data[col[0]] = row[idx]
     return data
 
-MSIGDB_PATH = os.path.join("GSEAWrap_resources", "msigdb.db")
-
-# Read term argument passed by the script call
+# Read term argument passed as script argument
 term = sys.argv[1]
+
+# Read MSigDB file path passed as script argument
+msigdb_path = sys.argv[2]
 
 # Queries
 genes_query = """ 
@@ -52,18 +58,25 @@ authors_query = """
         ORDER BY c.author_order ASC """
 
 # Open SQLite database connection
-con = sqlite3.connect(MSIGDB_PATH)
+try:
+    con = sqlite3.connect(msigdb_path)
+except:
+    errorAndExit('The MSigDB file (msigdb.db) couldn\'t be opened.')
+    
 con.row_factory = row_to_dict
 cur = con.cursor()
 
 # Executes all queries
-details = cur.execute(details_query, (term, )).fetchone()
-genes = []
-for row in cur.execute(genes_query, (term, )):
-    genes.append(row["symbol"])
-authors = []
-for row in cur.execute(authors_query, (term, )):
-    authors.append(row["name"])
+try:
+    details = cur.execute(details_query, (term, )).fetchone()
+    genes = []
+    for row in cur.execute(genes_query, (term, )):
+        genes.append(row["symbol"])
+    authors = []
+    for row in cur.execute(authors_query, (term, )):
+        authors.append(row["name"])
+except:
+    errorAndExit('The gene set wasn\'t found in the MSigDB or there was an error while retreiving it.')
 
 # Format result to send
 res = details
@@ -71,6 +84,6 @@ res["genes"] = genes
 res["authors"] = authors
 res_json = json.dumps(res)
 
+# Print and flush the result on stdout
 print(res_json)
-
 sys.stdout.flush()

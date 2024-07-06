@@ -13,12 +13,33 @@
     "config": {
         "forge": {
             "packagerConfig": {
-                "extraResource": [
-                    "./backend_src",
-                    "./dependencies",
-                    "./icons"
-                ]
-            }
+                "asar": false
+            },
+            "makers": [
+                {
+                    "name": "@electron-forge/maker-squirrel",
+                    "config": {}
+                },
+                {
+                    "name": "@electron-forge/maker-zip",
+                    "platforms": [
+                        "darwin"
+                    ]
+                },
+                {
+                    "name": "@electron-forge/maker-flatpak",
+                    "config": {
+                        "options": {
+                            "categories": [
+                                "Video"
+                            ],
+                            "mimeType": [
+                                "video/h264"
+                            ]
+                        }
+                    }
+                }
+            ]
         }
     },
     "devDependencies": {

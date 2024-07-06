@@ -5,9 +5,14 @@ const path = require('node:path')
 const log = require('electron-log/main')
 const tmp = require('tmp')
 
-
 // Current date in yyyy-mm-dd format as a string
 const currentDate = new Date().toISOString().slice(0, 10)
+
+// Home directory of user running the app
+const HOME_DIR = app.getPath('home')
+
+// Default temporary plot file path
+const PLOT_PATH = path.join(HOME_DIR, 'gsea_plot.png')
 
 // Utility function that collects the stderr output, shows a failure popup in case the passed
 // process returns a code different from 0 (unexpected exit) and logs it in a file
@@ -27,24 +32,24 @@ const popupOnProcessFail = (process) => {
         if (code !== 0) {
             dialog.showMessageBox({
                 message: stdoutContent != ''
-                            ? stdoutContent
-                            : stderrContent,
+                    ? stdoutContent
+                    : stderrContent,
                 type: 'error',
                 title: 'Failure'
             })
 
-            log.error('\n=== Error ===\nError description: ' + stdoutContent + '\nStderr trace:\n' + stderrContent + '\n========================\n')
+            log.error('\n========================\nError description: ' + stdoutContent + '\nStderr trace:\n' + stderrContent + '\n========================\n')
         }
     })
 }
 
-// Utility function that create a local path
+// Utility function that return a local path
 const localPath = (type, file) => {
     let dir = ''
     let ext = ''
     switch (type) {
         case 'web':
-            dir = 'web_pages' 
+            dir = 'web_pages'
             ext = '.html'
             break
         case 'preload':
@@ -59,30 +64,22 @@ const localPath = (type, file) => {
             dir = 'renderer_src'
             ext = '.js'
             break
-        case 'resources':
-            dir = 'GSEAWrap_resources'
-            break
-        case 'log':
-            dir = 'GSEAWrap_log'
+        case 'resource':
+            dir = 'misc_resources'
             break
         default:
             return ''
     }
 
-    let locPath = ''
-    
-    if (file === null || file === '')
-        locPath = path.join(__dirname, dir)
-    else 
-        locPath = path.join(__dirname, dir, file + ext)
+    let locPath  = path.join(__dirname, dir, file + ext)
 
     return locPath
 }
 
 // Setup the logger
 // It will be used just for errors and it must save the logs in the local directory
-const LOG_FILE_NAME = 'gseawrap_error_' + currentDate + '.log'
-log.transports.file.resolvePathFn = () => path.join('GSEAWrap_log/' + LOG_FILE_NAME);
+const LOG_FILE_NAME = 'gseawrap_error_' + currentDate
+log.transports.file.resolvePathFn = () => path.join(HOME_DIR, 'GSEAWrap_log', LOG_FILE_NAME)
 log.transports.file.level = 'error'
 
 // Function that creates the home window
@@ -202,12 +199,14 @@ const createTableWindow = (jsonRawData, analysisType) => {
     ipcMain.on('request-enrichment-plot', (_event, selectedTerms, sizeX, sizeY, createOrUpdate) => {
         const pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'enrichment-plot', selectedTerms, sizeX, sizeY])
 
-        pythonProcess.stdout.on('end', () => {
-            if (createOrUpdate == 'create')
-                createPlotWindow(800, 600, 'enrichment-plot', [selectedTerms])
-            else if (createOrUpdate == 'update')
-                // Send the update message just if plotWindow object is not null (.?)
-                globalThis.plotWindow?.webContents.send('plot-updated')
+        pythonProcess.on('exit', (code) => {
+            if (code == 0) {
+                if (createOrUpdate == 'create')
+                    createPlotWindow(800, 600, 'enrichment-plot', [selectedTerms])
+                else if (createOrUpdate == 'update')
+                    // Send the update message just if plotWindow object is not null (.?)
+                    globalThis.plotWindow?.webContents.send('plot-updated')
+            }
         })
 
         popupOnProcessFail(pythonProcess)
@@ -216,12 +215,14 @@ const createTableWindow = (jsonRawData, analysisType) => {
     ipcMain.on('request-dotplot', (_event, selectedColumn, selectedTerms, sizeX, sizeY, createOrUpdate) => {
         const pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'dotplot', selectedColumn, selectedTerms, sizeX, sizeY])
 
-        pythonProcess.stdout.on('end', () => {
-            if (createOrUpdate == 'create')  
-                createPlotWindow(900, 500, 'dotplot', [selectedColumn, selectedTerms])
-            else if (createOrUpdate == 'update')
-                // Send the update message just if plotWindow object is not null (.?)
-                globalThis.plotWindow?.webContents.send('plot-updated')
+        pythonProcess.on('exit', (code) => {
+            if (code == 0) {
+                if (createOrUpdate == 'create')
+                    createPlotWindow(900, 500, 'dotplot', [selectedColumn, selectedTerms])
+                else if (createOrUpdate == 'update')
+                    // Send the update message just if plotWindow object is not null (.?)
+                    globalThis.plotWindow?.webContents.send('plot-updated')
+            }
         })
 
         popupOnProcessFail(pythonProcess)
@@ -230,12 +231,14 @@ const createTableWindow = (jsonRawData, analysisType) => {
     ipcMain.on('request-heatmap', (_event, selectedRow, sizeX, sizeY, createOrUpdate) => {
         const pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'heatmap', selectedRow, sizeX, sizeY])
 
-        pythonProcess.stdout.on('end', () => {
-            if (createOrUpdate == 'create')
-                createPlotWindow(900, 500, 'heatmap', [selectedRow])
-            else if (createOrUpdate == 'update')
-                // Send the update message just if plotWindow object is not null (.?)
-                globalThis.plotWindow?.webContents.send('plot-updated')
+        pythonProcess.on('exit', (code) => {
+            if (code == 0) {
+                if (createOrUpdate == 'create')
+                    createPlotWindow(900, 500, 'heatmap', [selectedRow])
+                else if (createOrUpdate == 'update')
+                    // Send the update message just if plotWindow object is not null (.?)
+                    globalThis.plotWindow?.webContents.send('plot-updated')
+            }
         })
 
         popupOnProcessFail(pythonProcess)
@@ -244,12 +247,14 @@ const createTableWindow = (jsonRawData, analysisType) => {
     ipcMain.on('request-iou-plot', (_event, selectedGenesets, sizeX, sizeY, createOrUpdate) => {
         const pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'intersection-over-union', selectedGenesets, sizeX, sizeY])
 
-        pythonProcess.stdout.on('end', () => {
-            if (createOrUpdate == 'create')
-                createPlotWindow(800, 600, 'iou-plot', [selectedGenesets])
-            else if (createOrUpdate == 'update')
-                // Send the update message just if plotWindow object is not null (.?)
-                globalThis.plotWindow?.webContents.send('plot-updated')
+        pythonProcess.on('exit', (code) => {
+            if (code == 0) {
+                if (createOrUpdate == 'create')
+                    createPlotWindow(800, 600, 'iou-plot', [selectedGenesets])
+                else if (createOrUpdate == 'update')
+                    // Send the update message just if plotWindow object is not null (.?)
+                    globalThis.plotWindow?.webContents.send('plot-updated')
+            }
         })
 
         popupOnProcessFail(pythonProcess)
@@ -262,35 +267,37 @@ const createTableWindow = (jsonRawData, analysisType) => {
         // Write to the tmp file the selected column data
         // Needed since, most of the times, lead_gene data are too long to be passed as argument
         fs.writeFileSync(tmpFile.name, selectedColumn, (err) => {
-            if(err)
+            if (err)
                 log.error('The selected column data file, to be passed to python script, couldn\'t be created')
         })
 
         const pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'wordcloud', tmpFile.name, sizeX, sizeY])
 
-        pythonProcess.stdout.on('end', () => {
+        pythonProcess.on('exit', (code) => {
             // Remove the tmp file
             tmpFile.removeCallback()
 
-            if (createOrUpdate == 'create')
-                createPlotWindow(800, 600, 'wordcloud', [selectedColumn])
-            else if (createOrUpdate == 'update')
-                // Send the update message just if plotWindow object is not null (.?)
-                globalThis.plotWindow?.webContents.send('plot-updated')
+            if (code == 0) {
+                if (createOrUpdate == 'create')
+                    createPlotWindow(800, 600, 'wordcloud', [selectedColumn])
+                else if (createOrUpdate == 'update')
+                    // Send the update message just if plotWindow object is not null (.?)
+                    globalThis.plotWindow?.webContents.send('plot-updated')
+            }
         })
 
         popupOnProcessFail(pythonProcess)
     })
 
     ipcMain.on('request-gene-set-info', (_event, selectedTerm) => {
-        if (!fs.existsSync(localPath('resources', 'msigdb.db')))
+        if (!fs.existsSync(localPath('resource', 'msigdb.db'))) {
             dialog.showMessageBox({
-                message: 'No Msig database was found.',
+                message: 'The MSigDB file (msigdb.db) wasn\'t found.',
                 type: 'error',
                 title: 'Failure'
             })
-        else {
-            const pythonProcess = spawn('python', [localPath('python', 'gene_set_info'), selectedTerm])
+        } else {
+            const pythonProcess = spawn('python', [localPath('python', 'gene_set_info'), selectedTerm, localPath('resource', 'msigdb.db')])
 
             let jsonContent = ''
 
@@ -301,13 +308,9 @@ const createTableWindow = (jsonRawData, analysisType) => {
             pythonProcess.on('exit', (code) => {
                 if (code == 0)
                     createGeneSetInfoWindow(jsonContent)
-                else
-                    dialog.showMessageBox({
-                        message: 'No gene set data was found or an error was thrown while retrieving it.',
-                        type: 'error',
-                        title: 'Failure'
-                    })
             })
+
+            popupOnProcessFail(pythonProcess)
         }
     })
 
@@ -328,14 +331,14 @@ const createPlotWindow = (customWidth, customHeight, plotType, plotArgs) => {
 
     // Send plot data (type and args used to generate it) when the window has finished loading
     plotWindow.webContents.on('did-finish-load', () => {
-        plotWindow.webContents.send('send-plot-data', plotType, plotArgs)
+        plotWindow.webContents.send('send-plot-data', plotType, plotArgs, PLOT_PATH)
     })
 
     // Delete plot file when the window is closed
     plotWindow.on('close', _event => {
-        fs.unlink('gsea_plot.png', (err) => {
+        fs.unlink(PLOT_PATH, (err) => {
             if (err)
-                log.error('Temporary plot file gsea_plot.png couldn\'t be deleted.')
+                log.error('Temporary plot file ' + PLOT_PATH + ' couldn\'t be deleted.')
         })
     })
 
@@ -364,7 +367,7 @@ const createGeneSetInfoWindow = (geneSetInfo) => {
 app.disableHardwareAcceleration()
 
 // Needed for Windows Squirrel package
-if (require('electron-squirrel-startup')) 
+if (require('electron-squirrel-startup'))
     app.quit()
 
 app.whenReady().then(() => {
@@ -388,6 +391,10 @@ app.on('window-all-closed', () => {
         //     if (err)
         //         log.error('Python session file gsea_run.pkl couldn\'t be deleted')
         // })
+        fs.unlink(path.join(HOME_DIR, 'gseawrap_python_session.pkl'), (err) => {
+            if (err)
+                log.error('Python session file ' + path.join(HOME_DIR, 'gseawrap_python_session.pkl') + ' couldn\'t be deleted')
+        })
 
         app.quit()
     }

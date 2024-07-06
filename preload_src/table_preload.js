@@ -6,7 +6,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     requestEnrichmentPlot: (selectedTerms) => 
         ipcRenderer.send('request-enrichment-plot', selectedTerms, 4, 5, 'create'),
     requestDotplot: (selectedColumn, selectedTerms) => 
-        ipcRenderer.send('request-dotplot', selectedColumn, selectedTerms, 4, 5, 'create'),
+        ipcRenderer.send('request-dotplot', selectedColumn, selectedTerms, 4, 7, 'create'),
     requestHeatmap: (selectedRow) => 
         ipcRenderer.send('request-heatmap', selectedRow, 14, 4, 'create'),
     requestIOUPlot: (selectedGenesets) => 

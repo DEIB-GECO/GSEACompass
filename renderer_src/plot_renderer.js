@@ -29,9 +29,13 @@ zoomOutButton.addEventListener('click', () => {
 })
 
 // Behavior when plot data received
-window.electronAPI.onReceviedData((plotType, plotArgs) => {
+window.electronAPI.onReceviedData((plotType, plotArgs, plotPath) => {
+    img.src = plotPath
+    saveHiddenAnchor.href = plotPath
+
     // Update the plot size when update button clicked
     updateSizeButton.addEventListener('click', () => {
+        // If the inputs are not empty
         if (xSize.value != '' && ySize.value != '') {
             window.electronAPI.changePlotSize(plotType, plotArgs, xSize.value, ySize.value)
 
@@ -39,7 +43,7 @@ window.electronAPI.onReceviedData((plotType, plotArgs) => {
             // otherwise, because of cache, the same would be shown
             window.electronAPI.onPlotUpdated(() => {
                 const timestamp = new Date().getTime()
-                img.src = img.src + '?t=' + timestamp
+                img.src = plotPath + '?t=' + timestamp
             })
         }
     })

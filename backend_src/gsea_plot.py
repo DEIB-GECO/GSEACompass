@@ -1,4 +1,5 @@
 import sys
+import os.path
 import pandas as pd
 import matplotlib.pyplot as plt
 from gseapy import gseaplot, gseaplot2, dotplot, heatmap
@@ -9,14 +10,17 @@ import seaborn as sns
 from wordcloud import WordCloud
 import json
 
-# Read plot type argument passed by the script call
-plot_type = sys.argv[1]
+# Home directory of user running this script
+HOME_DIR = os.path.expanduser("~")
 
 # Load the saved python session, with all its variables
-dill.load_session("gsea_run.pkl")
+dill.load_session(os.path.join(HOME_DIR, "gseawrap_python_session.pkl"))
 
 # Default plot file name
-PLOT_FILE = "gsea_plot.png"
+PLOT_FILE = os.path.join(HOME_DIR, "gsea_plot.png")
+
+# Read plot type argument passed by the script call
+plot_type = sys.argv[1]
 
 match plot_type:
 

@@ -1,10 +1,15 @@
 import sys
+import os.path
 import pandas as pd
 import matplotlib.pyplot as plt
 from pandas.api.types import is_numeric_dtype
 import gseapy as gp
 import dill
 
+# Home directory of user running this script
+HOME_DIR = os.path.expanduser("~")
+
+# Utility function to exit on error
 def errorAndExit(errorString):
     print(errorString)
     exit(1)
@@ -85,4 +90,4 @@ print(res_json)
 sys.stdout.flush()
 
 # Save the python session on a file
-dill.dump_session("gsea_run.pkl")
+dill.dump_session(os.path.join(HOME_DIR, "gseawrap_python_session.pkl"))
