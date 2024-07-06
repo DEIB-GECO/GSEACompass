@@ -1,6 +1,6 @@
 # GSEAWrap
 
-A minimalistic yet powerful app to run *GSEA*, pre-ranked *GSEA* and *ssGSEA* and, **mostly**, do post-analysis elaboration on the results!
+A minimalistic yet powerful app to run *GSEA*, pre-ranked *GSEA* and, **mostly**, do post-analysis elaboration on the results!
 
 ## Outline
 
