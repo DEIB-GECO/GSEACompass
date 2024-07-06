@@ -72,7 +72,7 @@ npm install
 To build and run the application just run the following command, make sure to be in the repository directory:
 
 ```bash
-npm start
+npm run start
 ```
 
 In order to run the app, be sure to have installed the run dependencies too (see [up above](#run-dependencies)).
