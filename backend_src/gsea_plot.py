@@ -54,17 +54,20 @@ match plot_type:
                     ofname=PLOT_FILE)
     
     case "dotplot":
-        selected_column = sys.argv[2]
-        selected_terms_raw = sys.argv[3]
-        size_x = float(sys.argv[4])
-        size_y = float(sys.argv[5])
+        selected_column_and_terms_file_path = sys.argv[2]
+        size_x = float(sys.argv[3])
+        size_y = float(sys.argv[4])
         
-        filtered_res = ""
+        # Parse file content as JSON
+        selected_column_and_terms = pd.read_json(selected_column_and_terms_file_path)
         
-        # Convert the JSON-formatted terms in a Series
-        selected_terms = pd.read_json(StringIO(selected_terms_raw), typ="series").rename("Term")
+        # Extract selected column name (first field)
+        selected_column = selected_column_and_terms.iloc[0, 0]
         
-        # Join the GSEA/GSEA preranked result with these terms
+        # Extract selected terms (second field, list) and convert it to a series
+        selected_terms = pd.Series(selected_column_and_terms.iloc[1, 0]).rename('Term')
+        
+        # Join the GSEA/GSEA preranked result with the selected terms
         # i.e filter out from res.res2d all those rows not having a term contained in selected_terms
         filtered_res = res.res2d.merge(selected_terms, how="inner", on="Term")
             
@@ -166,7 +169,7 @@ match plot_type:
         wc.to_file(PLOT_FILE)
     
     case _:
-        print("Error: requested plot doesn't exist", file=sys.stderr)
+        print("The requested plot doesn't exist", file=sys.stderr)
         exit(1)
 
 

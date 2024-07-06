@@ -202,7 +202,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         pythonProcess.on('exit', (code) => {
             if (code == 0) {
                 if (createOrUpdate == 'create')
-                    createPlotWindow(800, 600, 'enrichment-plot', [selectedTerms])
+                    createPlotWindow(800, 600, 'enrichment-plot', selectedTerms)
                 else if (createOrUpdate == 'update')
                     // Send the update message just if plotWindow object is not null (.?)
                     globalThis.plotWindow?.webContents.send('plot-updated')
@@ -212,13 +212,26 @@ const createTableWindow = (jsonRawData, analysisType) => {
         popupOnProcessFail(pythonProcess)
     })
 
-    ipcMain.on('request-dotplot', (_event, selectedColumn, selectedTerms, sizeX, sizeY, createOrUpdate) => {
-        const pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'dotplot', selectedColumn, selectedTerms, sizeX, sizeY])
+    ipcMain.on('request-dotplot', (_event, selectedColumnAndTerms, sizeX, sizeY, createOrUpdate) => {
+        // Create a tmp file
+        const tmpFile = tmp.fileSync();
+
+        // Write to the tmp file the selected column data
+        // Needed since, most of the times, lead_gene data are too long to be passed as argument
+        fs.writeFileSync(tmpFile.name, selectedColumnAndTerms, (err) => {
+            if (err)
+                log.error('The selected data file, to be passed to python script, couldn\'t be created.')
+        })
+        
+        const pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'dotplot', tmpFile.name, sizeX, sizeY])
 
         pythonProcess.on('exit', (code) => {
+            // Remove the tmp file
+            tmpFile.removeCallback()
+
             if (code == 0) {
                 if (createOrUpdate == 'create')
-                    createPlotWindow(900, 500, 'dotplot', [selectedColumn, selectedTerms])
+                    createPlotWindow(900, 500, 'dotplot', selectedColumnAndTerms)
                 else if (createOrUpdate == 'update')
                     // Send the update message just if plotWindow object is not null (.?)
                     globalThis.plotWindow?.webContents.send('plot-updated')
@@ -234,7 +247,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         pythonProcess.on('exit', (code) => {
             if (code == 0) {
                 if (createOrUpdate == 'create')
-                    createPlotWindow(900, 500, 'heatmap', [selectedRow])
+                    createPlotWindow(900, 500, 'heatmap', selectedRow)
                 else if (createOrUpdate == 'update')
                     // Send the update message just if plotWindow object is not null (.?)
                     globalThis.plotWindow?.webContents.send('plot-updated')
@@ -250,7 +263,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         pythonProcess.on('exit', (code) => {
             if (code == 0) {
                 if (createOrUpdate == 'create')
-                    createPlotWindow(800, 600, 'iou-plot', [selectedGenesets])
+                    createPlotWindow(800, 600, 'iou-plot', selectedGenesets)
                 else if (createOrUpdate == 'update')
                     // Send the update message just if plotWindow object is not null (.?)
                     globalThis.plotWindow?.webContents.send('plot-updated')
@@ -268,7 +281,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         // Needed since, most of the times, lead_gene data are too long to be passed as argument
         fs.writeFileSync(tmpFile.name, selectedColumn, (err) => {
             if (err)
-                log.error('The selected column data file, to be passed to python script, couldn\'t be created')
+                log.error('The selected column data file, to be passed to python script, couldn\'t be created.')
         })
 
         const pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'wordcloud', tmpFile.name, sizeX, sizeY])
@@ -279,7 +292,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
 
             if (code == 0) {
                 if (createOrUpdate == 'create')
-                    createPlotWindow(800, 600, 'wordcloud', [selectedColumn])
+                    createPlotWindow(800, 600, 'wordcloud', selectedColumn)
                 else if (createOrUpdate == 'update')
                     // Send the update message just if plotWindow object is not null (.?)
                     globalThis.plotWindow?.webContents.send('plot-updated')
@@ -320,7 +333,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
 }
 
 // Function that creates and handles the plot window
-const createPlotWindow = (customWidth, customHeight, plotType, plotArgs) => {
+const createPlotWindow = (customWidth, customHeight, plotType, plotArg) => {
     globalThis.plotWindow = new BrowserWindow({
         width: customWidth,
         height: customHeight,
@@ -331,7 +344,7 @@ const createPlotWindow = (customWidth, customHeight, plotType, plotArgs) => {
 
     // Send plot data (type and args used to generate it) when the window has finished loading
     plotWindow.webContents.on('did-finish-load', () => {
-        plotWindow.webContents.send('send-plot-data', plotType, plotArgs, PLOT_PATH)
+        plotWindow.webContents.send('send-plot-data', plotType, plotArg, PLOT_PATH)
     })
 
     // Delete plot file when the window is closed

@@ -29,7 +29,7 @@ zoomOutButton.addEventListener('click', () => {
 })
 
 // Behavior when plot data received
-window.electronAPI.onReceviedData((plotType, plotArgs, plotPath) => {
+window.electronAPI.onReceviedData((plotType, plotArg, plotPath) => {
     img.src = plotPath
     saveHiddenAnchor.href = plotPath
 
@@ -37,7 +37,7 @@ window.electronAPI.onReceviedData((plotType, plotArgs, plotPath) => {
     updateSizeButton.addEventListener('click', () => {
         // If the inputs are not empty
         if (xSize.value != '' && ySize.value != '') {
-            window.electronAPI.changePlotSize(plotType, plotArgs, xSize.value, ySize.value)
+            window.electronAPI.changePlotSize(plotType, plotArg, xSize.value, ySize.value)
 
             // Needed to update the image after being re-generated
             // otherwise, because of cache, the same would be shown

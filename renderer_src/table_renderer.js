@@ -119,8 +119,8 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                                     for (let i = 0; i < rows.length; i++)
                                         selectedTerms[i] = rows[i].Term
 
-                                    // Send the selected column title in JSON format
-                                    window.electronAPI.requestDotplot(selectedColumn, JSON.stringify(selectedTerms))
+                                    // Send the selected column title and selecter/visible rows terms in JSON format
+                                    window.electronAPI.requestDotplot(JSON.stringify([selectedColumn, selectedTerms]))
                                 }
                             },
                             {
@@ -316,7 +316,13 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                     table.column(i).deselect()
             })
 
-            // If anyone deselects a column, uncheck the corresponding checkbox
+            // If hide/show a column, hide/show corresponding checkbox
+            table.on('column-visibility.dt', function (_event, _settings, columnIdx, isVisible) {
+                if (columnIdx == i)
+                    selector.hidden = !isVisible
+            })
+
+            // If deselect a column, uncheck the corresponding checkbox
             table.on('deselect', (_event, _dt, type, index) => {
                 if (type == 'column' && index.includes(i))
                     checkbox.checked = false
