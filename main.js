@@ -1,9 +1,18 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron')
-const { spawn } = require('child_process')
-const fs = require('fs')
-const path = require('node:path')
-const log = require('electron-log/main')
-const tmp = require('tmp')
+import { app, BrowserWindow, ipcMain, dialog, Menu } from 'electron'
+import { spawn } from 'child_process'
+import { writeFileSync, existsSync, unlink } from 'fs'
+import { join } from 'node:path'
+import logPkg from 'electron-log/main.js'
+const { error, transports } = logPkg
+import { fileSync } from 'tmp'
+import fixPath from 'fix-path'
+
+// Needed since electron-squirrel-startup seems not to support ESM
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
+
+// Needed in Linux as OSX enviroments, in which Electron may not recognize the $PATH correctly
+fixPath()
 
 // Current date in yyyy-mm-dd format as a string
 const currentDate = new Date().toISOString().slice(0, 10)
@@ -12,7 +21,7 @@ const currentDate = new Date().toISOString().slice(0, 10)
 const HOME_DIR = app.getPath('home')
 
 // Default temporary plot file path
-const PLOT_PATH = path.join(HOME_DIR, 'gsea_plot.png')
+const PLOT_PATH = join(HOME_DIR, 'gsea_plot.png')
 
 // Utility function that collects the stderr output, shows a failure popup in case the passed
 // process returns a code different from 0 (unexpected exit) and logs it in a file
@@ -38,7 +47,7 @@ const popupOnProcessFail = (process) => {
                 title: 'Failure'
             })
 
-            log.error('\n========================\nError description: ' + stdoutContent + '\nStderr trace:\n' + stderrContent + '\n========================\n')
+            error('\n========================\nError description: ' + stdoutContent + '\nStderr trace:\n' + stderrContent + '\n========================\n')
         }
     })
 }
@@ -67,11 +76,14 @@ const localPath = (type, file) => {
         case 'resource':
             dir = 'misc_resources'
             break
+        case 'icon':
+            dir = 'icons'
+            break
         default:
             return ''
     }
 
-    let locPath  = path.join(__dirname, dir, file + ext)
+    let locPath = join(app.getAppPath(), dir, file + ext)
 
     return locPath
 }
@@ -79,14 +91,15 @@ const localPath = (type, file) => {
 // Setup the logger
 // It will be used just for errors and it must save the logs in the local directory
 const LOG_FILE_NAME = 'gseawrap_error_' + currentDate
-log.transports.file.resolvePathFn = () => path.join(HOME_DIR, 'GSEAWrap_log', LOG_FILE_NAME)
-log.transports.file.level = 'error'
+transports.file.resolvePathFn = () => join(HOME_DIR, 'GSEAWrap_log', LOG_FILE_NAME)
+transports.file.level = 'error'
 
 // Function that creates the home window
 const createMainWindow = () => {
     const mainWindow = new BrowserWindow({
         width: 800,
         height: 600,
+        icon: localPath('icon', 'GW.png'),
         webPreferences: {
             preload: localPath('preload', 'main_preload')
         }
@@ -108,6 +121,7 @@ const createGseaWindow = () => {
     const gseaWindow = new BrowserWindow({
         width: 800,
         height: 670,
+        icon: localPath('icon', 'GW.png'),
         webPreferences: {
             preload: localPath('preload', 'gsea_preload')
         }
@@ -147,6 +161,7 @@ const createGseaPrerankedWindow = () => {
     const gseaPrerankedWindow = new BrowserWindow({
         width: 800,
         height: 600,
+        icon: localPath('icon', 'GW.png'),
         webPreferences: {
             preload: localPath('preload', 'gsea_preranked_preload')
         }
@@ -187,6 +202,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
     const tableWindow = new BrowserWindow({
         width: 800,
         height: 600,
+        icon: localPath('icon', 'GW.png'),
         webPreferences: {
             preload: localPath('preload', 'table_preload')
         }
@@ -214,13 +230,13 @@ const createTableWindow = (jsonRawData, analysisType) => {
 
     ipcMain.on('request-dotplot', (_event, selectedColumnAndTerms, sizeX, sizeY, createOrUpdate) => {
         // Create a tmp file
-        const tmpFile = tmp.fileSync();
+        const tmpFile = fileSync();
 
         // Write to the tmp file the selected column data
         // Needed since, most of the times, lead_gene data are too long to be passed as argument
-        fs.writeFileSync(tmpFile.name, selectedColumnAndTerms, (err) => {
+        writeFileSync(tmpFile.name, selectedColumnAndTerms, (err) => {
             if (err)
-                log.error('The selected data file, to be passed to python script, couldn\'t be created.')
+                error('The selected data file, to be passed to python script, couldn\'t be created.')
         })
         
         const pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'dotplot', tmpFile.name, sizeX, sizeY])
@@ -275,13 +291,13 @@ const createTableWindow = (jsonRawData, analysisType) => {
 
     ipcMain.on('request-wordcloud', (_event, selectedColumn, sizeX, sizeY, createOrUpdate) => {
         // Create a tmp file
-        const tmpFile = tmp.fileSync();
+        const tmpFile = fileSync();
 
         // Write to the tmp file the selected column data
         // Needed since, most of the times, lead_gene data are too long to be passed as argument
-        fs.writeFileSync(tmpFile.name, selectedColumn, (err) => {
+        writeFileSync(tmpFile.name, selectedColumn, (err) => {
             if (err)
-                log.error('The selected column data file, to be passed to python script, couldn\'t be created.')
+                error('The selected column data file, to be passed to python script, couldn\'t be created.')
         })
 
         const pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'wordcloud', tmpFile.name, sizeX, sizeY])
@@ -303,7 +319,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
     })
 
     ipcMain.on('request-gene-set-info', (_event, selectedTerm) => {
-        if (!fs.existsSync(localPath('resource', 'msigdb.db'))) {
+        if (!existsSync(localPath('resource', 'msigdb.db'))) {
             dialog.showMessageBox({
                 message: 'The MSigDB file (msigdb.db) wasn\'t found.',
                 type: 'error',
@@ -337,6 +353,7 @@ const createPlotWindow = (customWidth, customHeight, plotType, plotArg) => {
     globalThis.plotWindow = new BrowserWindow({
         width: customWidth,
         height: customHeight,
+        icon: localPath('icon', 'GW.png'),
         webPreferences: {
             preload: localPath('preload', 'plot_preload')
         }
@@ -349,9 +366,9 @@ const createPlotWindow = (customWidth, customHeight, plotType, plotArg) => {
 
     // Delete plot file when the window is closed
     plotWindow.on('close', _event => {
-        fs.unlink(PLOT_PATH, (err) => {
+        unlink(PLOT_PATH, (err) => {
             if (err)
-                log.error('Temporary plot file ' + PLOT_PATH + ' couldn\'t be deleted.')
+                error('Temporary plot file ' + PLOT_PATH + ' couldn\'t be deleted.')
         })
     })
 
@@ -363,6 +380,7 @@ const createGeneSetInfoWindow = (geneSetInfo) => {
     const geneSetInfoWindow = new BrowserWindow({
         width: 600,
         height: 400,
+        icon: localPath('icon', 'GW.png'),
         webPreferences: {
             preload: localPath('preload', 'gene_set_info_preload')
         }
@@ -399,14 +417,9 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
-        // TODO: remove comments
-        // fs.unlink('gsea_run.pkl', (err) => {
-        //     if (err)
-        //         log.error('Python session file gsea_run.pkl couldn\'t be deleted')
-        // })
-        fs.unlink(path.join(HOME_DIR, 'gseawrap_python_session.pkl'), (err) => {
+        unlink(join(HOME_DIR, 'gseawrap_python_session.pkl'), (err) => {
             if (err)
-                log.error('Python session file ' + path.join(HOME_DIR, 'gseawrap_python_session.pkl') + ' couldn\'t be deleted')
+                error('\n========================\nWarning: The file ' + join(HOME_DIR, 'gseawrap_python_session.pkl') +  ' \n========================\n')
         })
 
         app.quit()

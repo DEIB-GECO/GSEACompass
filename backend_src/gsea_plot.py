@@ -1,14 +1,18 @@
-import sys
-import os.path
-import pandas as pd
-import matplotlib.pyplot as plt
-from gseapy import gseaplot, gseaplot2, dotplot, heatmap
-from io import StringIO
-import dill
-import numpy as np
-import seaborn as sns
-from wordcloud import WordCloud
-import json
+try:
+    import sys
+    import os.path
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    from gseapy import gseaplot, gseaplot2, dotplot, heatmap
+    from io import StringIO
+    import dill
+    import numpy as np
+    import seaborn as sns
+    from wordcloud import WordCloud
+    import json
+except Exception as e:
+    print('Some python libraries weren\'t found.\n' + str(e))
+    exit(1)
 
 # Home directory of user running this script
 HOME_DIR = os.path.expanduser("~")

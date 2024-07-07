@@ -1,18 +1,21 @@
-import sys
-import os.path
-import pandas as pd
-import matplotlib.pyplot as plt
-from pandas.api.types import is_numeric_dtype
-import gseapy as gp
-import dill
-
-# Home directory of user running this script
-HOME_DIR = os.path.expanduser("~")
-
 # Utility function to exit on error
 def errorAndExit(errorString):
     print(errorString)
     exit(1)
+
+try:
+    import sys
+    import os.path
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    from pandas.api.types import is_numeric_dtype
+    import gseapy as gp
+    import dill
+except Exception as e:
+    errorAndExit('Some python libraries weren\'t found.\n' + str(e))
+
+# Home directory of user running this script
+HOME_DIR = os.path.expanduser("~")
 
 # Read arguments passed on the script call
 gene_sets_path = sys.argv[1]

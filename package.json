@@ -1,8 +1,8 @@
 {
     "name": "gseawrap",
-    "version": "1.0.0",
+    "version": "1.3.0",
     "description": "gseawrap",
-    "main": "main.js",
+    "main": "./main.js",
     "scripts": {
         "start": "electron-forge start",
         "package": "electron-forge package",
@@ -10,10 +10,15 @@
     },
     "author": "Antonino Ciancimino",
     "license": "ISC",
+    "type": "module",
     "config": {
         "forge": {
             "packagerConfig": {
-                "asar": false
+                "asar": false,
+                "icon": "icons/GW.png",
+                "ignore": [
+                    "venv"
+                ]
             },
             "makers": [
                 {
@@ -23,19 +28,14 @@
                 {
                     "name": "@electron-forge/maker-zip",
                     "platforms": [
-                        "darwin"
+                        "linux"
                     ]
                 },
                 {
-                    "name": "@electron-forge/maker-flatpak",
+                    "name": "@electron-forge/maker-rpm",
                     "config": {
                         "options": {
-                            "categories": [
-                                "Video"
-                            ],
-                            "mimeType": [
-                                "video/h264"
-                            ]
+                            "icon": "icons/GW.png"
                         }
                     }
                 }
@@ -45,6 +45,7 @@
     "devDependencies": {
         "@electron-forge/cli": "^7.4.0",
         "@electron-forge/maker-deb": "^7.4.0",
+        "@electron-forge/maker-flatpak": "^7.4.0",
         "@electron-forge/maker-rpm": "^7.4.0",
         "@electron-forge/maker-squirrel": "^7.4.0",
         "@electron-forge/maker-zip": "^7.4.0",
@@ -54,9 +55,9 @@
         "electron": "^29.1.5"
     },
     "dependencies": {
-        "@electron-forge/maker-flatpak": "^7.4.0",
         "electron-log": "^5.1.2",
         "electron-squirrel-startup": "^1.0.1",
+        "fix-path": "^4.0.0",
         "tmp": "^0.2.3"
     }
 }
