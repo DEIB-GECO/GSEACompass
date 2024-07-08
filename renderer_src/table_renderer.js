@@ -145,14 +145,11 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                                     const numSelectedRows = selectedRows.length
 
                                     // Put each selected rows Term and Lead_genes fields in an array of dictionaries
-                                    const selectedGenesets = []
+                                    const selectedTerms = []
                                     for (let i = 0; i < numSelectedRows; i++)
-                                        selectedGenesets[i] = {
-                                            'term': selectedRows[i].Term,
-                                            'lead_genes': selectedRows[i].Lead_genes.split(';')
-                                        }
+                                        selectedTerms[i] = selectedRows[i].Term
 
-                                    window.electronAPI.requestIOUPlot(JSON.stringify(selectedGenesets))
+                                    window.electronAPI.requestIOUPlot(JSON.stringify(selectedTerms))
                                 }
                             },
                             {

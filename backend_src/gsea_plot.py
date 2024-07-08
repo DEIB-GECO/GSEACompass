@@ -99,25 +99,33 @@ match plot_type:
                 ofname=PLOT_FILE)
         
     case "intersection-over-union":
-        selected_genesets_raw = sys.argv[2]
-        size_x = float(sys.argv[3])
-        size_y = float(sys.argv[4])
+        selected_terms_raw = sys.argv[2]
+        gene_sets_path = sys.argv[3]
+        size_x = float(sys.argv[4])
+        size_y = float(sys.argv[5])
         
-        # Convert the JSON-formatted input in a dictionary
-        selected_genesets = json.loads(selected_genesets_raw)
+        # Convert the JSON-formatted selected terms in a Series
+        selected_terms = pd.read_json(StringIO(selected_terms_raw))[0]
+        
+        # Get the numbers of columns in each line of the gene sets database
+        # Needed since the gene sets data database has a different number of fields for each row
+        col_count = []
+        with open(gene_sets_path, "r") as gene_sets_file:
+            col_count = [ len(line.split("\t")) for line in gene_sets_file.readlines() ]
+        
+        # Read the gene sets database CSV file
+        gene_sets_database = pd.read_csv(gene_sets_path, sep="\t", names=range(max(col_count)), header=None, index_col=0)
+        
         genesets = {}
         labels = {}
         i = 0
         
-        for elem in selected_genesets:
-            term = elem['term']
-            lead_genes = elem['lead_genes']
-            
+        for term in selected_terms:
             # Create a short label for each geneset
             label = 'G' + str(i)
             labels[label] = term
             
-            genesets[label] = set(lead_genes)
+            genesets[label] = set(gene_sets_database.loc[term, 2:].dropna())
             
             i = i+1
 
