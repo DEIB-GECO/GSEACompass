@@ -38,6 +38,14 @@
                             "icon": "icons/GW.png"
                         }
                     }
+                },
+                {
+                    "name": "@electron-forge/maker-deb",
+                    "config": {
+                        "options": {
+                            "icon": "icons/GW.png"
+                        }
+                    }
                 }
             ]
         }

@@ -9,8 +9,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.send('request-dotplot', selectedColumnAndTerms, 4, 7, 'create'),
     requestHeatmap: (selectedRow) => 
         ipcRenderer.send('request-heatmap', selectedRow, 14, 4, 'create'),
-    requestIOUPlot: (selectedGenesets) => 
-        ipcRenderer.send('request-iou-plot', selectedGenesets, 7, 7, 'create'),
+    requestIOUPlot: (selectedTerms) => 
+        ipcRenderer.send('request-iou-plot', selectedTerms, 7, 7, 'create'),
     requestWordCloud: (selectedColumn) => 
         ipcRenderer.send('request-wordcloud', selectedColumn, 800, 500, 'create'),
     requestGeneSetInfo: (selectedTerm) => 

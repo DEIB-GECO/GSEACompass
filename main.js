@@ -94,6 +94,8 @@ const LOG_FILE_NAME = 'gseawrap_error_' + currentDate
 transports.file.resolvePathFn = () => join(HOME_DIR, 'GSEAWrap_log', LOG_FILE_NAME)
 transports.file.level = 'error'
 
+globalThis.chosenGeneSetsPath = ''
+
 // Function that creates the home window
 const createMainWindow = () => {
     const mainWindow = new BrowserWindow({
@@ -136,9 +138,12 @@ const createGseaWindow = () => {
         pythonProcess.stdout.on('data', (data) => {
             jsonContent += data
         })
+
         pythonProcess.on('exit', (code) => {
-            if (code === 0)
+            if (code === 0) {
+                globalThis.chosenGeneSetsPath = geneSetsPath
                 createTableWindow(jsonContent, 'gsea')
+            }
         })
 
         popupOnProcessFail(pythonProcess)
@@ -177,9 +182,12 @@ const createGseaPrerankedWindow = () => {
         pythonProcess.stdout.on('data', (data) => {
             jsonContent += data
         })
+
         pythonProcess.on('exit', (code) => {
-            if (code === 0)
+            if (code === 0) {
+                globalThis.chosenGeneSetsPath = geneSetsPath
                 createTableWindow(jsonContent, 'gsea_preranked')
+            }
         })
 
         popupOnProcessFail(pythonProcess)
@@ -273,13 +281,13 @@ const createTableWindow = (jsonRawData, analysisType) => {
         popupOnProcessFail(pythonProcess)
     })
 
-    ipcMain.on('request-iou-plot', (_event, selectedGenesets, sizeX, sizeY, createOrUpdate) => {
-        const pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'intersection-over-union', selectedGenesets, sizeX, sizeY])
+    ipcMain.on('request-iou-plot', (_event, selectedTerms, sizeX, sizeY, createOrUpdate) => {
+        const pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'intersection-over-union', selectedTerms, globalThis.chosenGeneSetsPath, sizeX, sizeY])
 
         pythonProcess.on('exit', (code) => {
             if (code == 0) {
                 if (createOrUpdate == 'create')
-                    createPlotWindow(800, 600, 'iou-plot', selectedGenesets)
+                    createPlotWindow(800, 600, 'iou-plot', selectedTerms)
                 else if (createOrUpdate == 'update')
                     // Send the update message just if plotWindow object is not null (.?)
                     globalThis.plotWindow?.webContents.send('plot-updated')
