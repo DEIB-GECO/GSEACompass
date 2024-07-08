@@ -33,11 +33,11 @@ try:
 except Exception:
     errorAndExit("The ranked list file is malformed and cannot be intepreted.")
     
-# Check if any value in the expression set file is missing
+# Check if any value in the ranked list file is missing
 if (rnk_list.isnull().any().any() or rnk_list.index.hasnans):
     errorAndExit("The ranked list file has some missing values and cannot be used.")
 
-# Check if any cell of the ranked list file (except index) is not numeric
+# Check if any cell of the ranked list file (except index) is not numerical
 if (rnk_list.apply(lambda x: not is_numeric_dtype(x)).any()):
     errorAndExit("The ranked list file has some non-numerical values and cannot be used.")
     
