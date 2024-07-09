@@ -2,6 +2,8 @@
 
 A minimalistic yet powerful app to run *GSEA*, pre-ranked *GSEA* and, **mostly**, do post-analysis elaboration on the results!
 
+To know more about how to use GSEAWrap and its idiosyncratic features, check out the offical user manual: [gseawrap.gitbook.io/user-manual](https://gseawrap.gitbook.io/user-manual)
+
 ## Outline
 
 - [Frameworks](#frameworks)
