@@ -1,6 +1,6 @@
 {
     "name": "gseawrap",
-    "version": "1.0.0",
+    "version": "1.3.2",
     "description": "gseawrap",
     "main": "main.js",
     "scripts": {
@@ -13,7 +13,12 @@
     "config": {
         "forge": {
             "packagerConfig": {
-                "asar": false
+                "asar": false,
+                "icon": "icons/GW.png",
+                "ignore": [
+                    "venv",
+                    "test_data"
+                ]
             },
             "makers": [
                 {
@@ -23,24 +28,19 @@
                 {
                     "name": "@electron-forge/maker-zip",
                     "platforms": [
-                        "darwin"
+                        "linux"
                     ]
                 },
                 {
-                    "name": "@electron-forge/maker-flatpak",
+                    "name": "@electron-forge/maker-deb",
                     "config": {
                         "options": {
-                            "categories": [
-                                "Video"
-                            ],
-                            "mimeType": [
-                                "video/h264"
-                            ]
+                            "icon": "icons/GW.png"
                         }
                     }
                 },
                 {
-                    "name": "@electron-forge/maker-deb",
+                    "name": "@electron-forge/maker-rpm",
                     "config": {
                         "options": {
                             "icon": "icons/GW.png"

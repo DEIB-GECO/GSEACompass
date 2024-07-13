@@ -75,14 +75,14 @@ try:
     authors = []
     for row in cur.execute(authors_query, (term, )):
         authors.append(row["name"])
+        
+    # Format result to print
+    res = details
+    res["genes"] = genes
+    res["authors"] = authors
+    res_json = json.dumps(res)
 except:
     errorAndExit('The gene set wasn\'t found in the MSigDB or there was an error while retreiving it.')
-
-# Format result to send
-res = details
-res["genes"] = genes
-res["authors"] = authors
-res_json = json.dumps(res)
 
 # Print and flush the result on stdout
 print(res_json)
