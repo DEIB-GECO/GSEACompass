@@ -8,8 +8,8 @@ To know more about how to use GSEAWrap and its idiosyncratic features, check out
 
 - [Frameworks](#frameworks)
 - [Run instructions](#run-instructions)
-  - [Download](#download)
-  - [Dependencies](#run-dependencies)
+  - [For users](#for-users)
+  - [For developers](#for-developers)
 - [Build instructions](#build-instructions)
   - [Dependencies](#build-dependencies)
   - [Build and run](#build-and-run)
@@ -24,11 +24,14 @@ This tool is super-powered by:
 
 ## Run instructions
 
-### Download
+### For users
 
-Download the latest stable version of GSEAWrap from the [releases page](https://github.com/DEIB-GECO/GSEAWrap/releases).
+Simpyl download the latest stable version of GSEAWrap from the [releases page](https://github.com/DEIB-GECO/GSEAWrap/releases) and 
+install it according to your OS. No dependency must be fulfilled or library installed.
 
-### Run dependencies
+### For developers
+
+Make sure, before running GSEAWrap in a development enviroment, to fulfill these run-time dependencies.
 
 #### Rust
 
