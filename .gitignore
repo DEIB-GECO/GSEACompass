@@ -5,5 +5,7 @@ gsea_run.pkl
 /.vscode
 /GSEAWrap_logs
 /venv
-
 out/
+/backend_src/build
+/backend_src/dist
+/backend_src/*.spec
