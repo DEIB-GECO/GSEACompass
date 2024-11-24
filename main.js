@@ -11,7 +11,7 @@ import fixPath from 'fix-path'
 import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
 
-// Needed in Linux as OSX enviroments, in which Electron may not recognize the $PATH correctly
+// Needed in Linux and OSX enviroments, in which Electron may not recognize the $PATH correctly
 fixPath()
 
 // Current date in yyyy-mm-dd format as a string
@@ -56,6 +56,7 @@ const popupOnProcessFail = (process) => {
 const localPath = (type, file) => {
     let dir = ''
     let ext = ''
+    
     switch (type) {
         case 'web':
             dir = 'web_pages'
@@ -138,10 +139,13 @@ const createGseaWindow = () => {
     ipcMain.on('send-data-gsea', (_event, geneSetsPath, numPermutations, expressionSet, phenotypeLabels, remapOption, chipPath) => {
         let pythonProcess = null
 
+        // Show the loading animation web page
+        gseaWindow.loadFile(localPath('web', 'loading'))
+
         if (app.isPackaged)
             pythonProcess = spawn(localPath('pythonBin', 'gsea'), [geneSetsPath, numPermutations, expressionSet, phenotypeLabels, remapOption, chipPath])
         else
-            pythonProcess = spawn('python', [localPath('python', 'gsea'), geneSetsPath, numPermutations, expressionSet, phenotypeLabels, remapOption, chipPath])
+            pythonProcess = spawn('venv/bin/python', [localPath('python', 'gsea'), geneSetsPath, numPermutations, expressionSet, phenotypeLabels, remapOption, chipPath])
 
         let jsonContent = ''
 
@@ -155,8 +159,12 @@ const createGseaWindow = () => {
                 createTableWindow(jsonContent, 'gsea')
                 gseaWindow.close()
             }
+            // In case of error show the GSEA web page
+            else {
+                gseaWindow.loadFile(localPath('web', 'gsea'))
+            }
         })
-
+        
         popupOnProcessFail(pythonProcess)
     })
 
@@ -187,10 +195,13 @@ const createGseaPrerankedWindow = () => {
     ipcMain.on('send-data-preranked', (_event, geneSetsPath, numPermutations, rankedListPath, remapOption, chipPath) => {
         let pythonProcess = null
 
+        // Show the loading animation web page
+        gseaPrerankedWindow.loadFile(localPath('web', 'loading'))
+
         if (app.isPackaged)
             pythonProcess = spawn(localPath('pythonBin', 'gsea_preranked'), [geneSetsPath, numPermutations, rankedListPath, remapOption, chipPath])
         else
-            pythonProcess = spawn('python', [localPath('python', 'gsea_preranked'), geneSetsPath, numPermutations, rankedListPath, remapOption, chipPath])
+            pythonProcess = spawn('venv/bin/python', [localPath('python', 'gsea_preranked'), geneSetsPath, numPermutations, rankedListPath, remapOption, chipPath])
 
         let jsonContent = ''
 
@@ -203,6 +214,11 @@ const createGseaPrerankedWindow = () => {
                 globalThis.chosenGeneSetsPath = geneSetsPath
                 createTableWindow(jsonContent, 'gsea_preranked')
                 gseaPrerankedWindow.close()
+            }
+            // In case of error
+            else {
+                // Show the GSEA web page
+                gseaPrerankedWindow.loadFile(localPath('web', 'gsea_preranked'))
             }
         })
 
@@ -242,7 +258,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         if (app.isPackaged)
             pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['enrichment-plot', selectedTerms, sizeX, sizeY])
         else
-            pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'enrichment-plot', selectedTerms, sizeX, sizeY])
+            pythonProcess = spawn('venv/bin/python', [localPath('python', 'gsea_plot'), 'enrichment-plot', selectedTerms, sizeX, sizeY])
 
         pythonProcess.on('exit', (code) => {
             if (code == 0) {
@@ -273,7 +289,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         if (app.isPackaged)
             pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['dotplot', tmpFile.name, sizeX, sizeY])
         else
-            pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'dotplot', tmpFile.name, sizeX, sizeY])
+            pythonProcess = spawn('venv/bin/python', [localPath('python', 'gsea_plot'), 'dotplot', tmpFile.name, sizeX, sizeY])
 
         pythonProcess.on('exit', (code) => {
             // Remove the tmp file
@@ -283,7 +299,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
                 if (createOrUpdate == 'create')
                     createPlotWindow(900, 500, 'dotplot', selectedColumnAndTerms)
                 else if (createOrUpdate == 'update')
-                    // Send the update message just if plotWindow object is not null (.?)
+                    // Send the update message only if plotWindow object is not null (.?)
                     globalThis.plotWindow?.webContents.send('plot-updated')
             }
         })
@@ -297,7 +313,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         if (app.isPackaged)
             pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['heatmap', selectedRow, sizeX, sizeY])
         else
-            pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'heatmap', selectedRow, sizeX, sizeY])
+            pythonProcess = spawn('venv/bin/python', [localPath('python', 'gsea_plot'), 'heatmap', selectedRow, sizeX, sizeY])
 
         pythonProcess.on('exit', (code) => {
             if (code == 0) {
@@ -318,7 +334,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         if (app.isPackaged)
             pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['intersection-over-union', selectedTerms, globalThis.chosenGeneSetsPath, sizeX, sizeY])
         else
-            pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'intersection-over-union', selectedTerms, globalThis.chosenGeneSetsPath, sizeX, sizeY])
+            pythonProcess = spawn('venv/bin/python', [localPath('python', 'gsea_plot'), 'intersection-over-union', selectedTerms, globalThis.chosenGeneSetsPath, sizeX, sizeY])
 
         pythonProcess.on('exit', (code) => {
             if (code == 0) {
@@ -349,7 +365,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         if (app.isPackaged)
             pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['wordcloud', tmpFile.name, sizeX, sizeY])
         else
-            pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'wordcloud', tmpFile.name, sizeX, sizeY])
+            pythonProcess = spawn('venv/bin/python', [localPath('python', 'gsea_plot'), 'wordcloud', tmpFile.name, sizeX, sizeY])
 
         pythonProcess.on('exit', (code) => {
             // Remove the tmp file
@@ -380,7 +396,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
             if (app.isPackaged)
                 pythonProcess = spawn(localPath('pythonBin', 'gene_set_info'), [selectedTerm, localPath('resource', 'msigdb.db')])
             else
-                pythonProcess = spawn('python', [localPath('python', 'gene_set_info'), selectedTerm, localPath('resource', 'msigdb.db')])
+                pythonProcess = spawn('venv/bin/python', [localPath('python', 'gene_set_info'), selectedTerm, localPath('resource', 'msigdb.db')])
 
             let jsonContent = ''
 
@@ -447,7 +463,7 @@ const createGeneSetInfoWindow = (geneSetInfo) => {
     geneSetInfoWindow.loadFile(localPath('web', 'gene_set_info'))
 }
 
-//  Set up the app
+// Set up the app
 // Menu.setApplicationMenu(null)
 app.disableHardwareAcceleration()
 
@@ -456,11 +472,6 @@ if (require('electron-squirrel-startup'))
     app.quit()
 
 app.whenReady().then(() => {
-    // --- Debug
-    // let data = fs.readFileSync('../test_data/preranked/test_result.json', 'utf8')
-    // createTableWindow(data, 'gsea_preranked')
-    // --- Debug
-
     createMainWindow()
 
     app.on('activate', () => {
@@ -473,7 +484,7 @@ app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         unlink(join(HOME_DIR, 'gseawrap_python_session.pkl'), (err) => {
             if (err)
-                error('\n========================\nWarning: The file ' + join(HOME_DIR, 'gseawrap_python_session.pkl') +  ' \n========================\n')
+                error('\n========================\nWarning: The file ' + join(HOME_DIR, 'gseawrap_python_session.pkl couldn\'t be deleted.') +  ' \n========================\n')
         })
 
         app.quit()
