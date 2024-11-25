@@ -10,6 +10,7 @@
     <script src="../renderer_src/plot_renderer.js" defer></script>
 
     <script src="../dependencies/panzoom/panzoom.min.js"></script>
+    <script src="../dependencies/datatables/datatables.min.js"></script>
     <link rel="stylesheet" href="../dependencies/datatables/datatables.css">
 
     <style>
@@ -26,14 +27,6 @@
             margin-left: auto;
             margin-right: auto;
         }
-
-        .custom-btn {
-
-        }
-
-        .custom-input {
-            
-        }
     </style>
 </head>
 
@@ -43,35 +36,56 @@
         <img class="center-fit" id="panzoom-img" />
     </div>
 
-    <!-- Hidden anchor for saving the image -->
-    <a id="save-hidden-anchor" download hidden></a>
+    <!-- Hidden anchor for saving the png image -->
+    <a id="save-png-hidden-anchor" download hidden></a>
+    <!-- Hidden anchor for saving the pdf image -->
+    <a id="save-pdf-hidden-anchor" download hidden></a>
+    <!-- Hidden anchor for saving the svg image -->
+    <a id="save-svg-hidden-anchor" download hidden></a>
 
     <!-- Buttons -->
     <div class="mx-4">
         <div class="row mb-4">
-            <!-- Save button -->
-            <div class="btn-group col">
-                <button type="button" class="btn btn-primary custom-btn" id="save-btn">Save</button>
+            <!-- Save buttons -->
+            <div class="btn-group col dropdown">
+                <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                    Save
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" id="save-png-btn">PNG</a></li>
+                    <li><a class="dropdown-item" href="#" id="save-pdf-btn">PDF</a></li>
+                    <li><a class="dropdown-item" href="#" id="save-svg-btn">SVG</a></li>
+                </ul>
             </div>
 
             <!-- Zoom in/out buttons -->
             <div class="btn-group col" role="group">
-                <button class="btn btn-secondary custom-btn" id="zoom-in-btn">Zoom In</button>
-                <button class="btn btn-secondary custom-btn" id="zoom-out-btn">Zoom Out</button>
+                <button class="btn btn-secondary" id="zoom-in-btn">Zoom In</button>
+                <button class="btn btn-secondary" id="zoom-out-btn">Zoom Out</button>
             </div>
         </div>
         <div class="row">
             <!-- Size inputs -->
             <div class="col">
-                <input type="number" step="any" name="x-size" id="x-size" class="form-control custom-input" placeholder="New width" aria-label="new-width" />
+                <input type="number" step="any" min="1" name="x-size" id="x-size" class="form-control custom-input"
+                    placeholder="New width" aria-label="new-width" />
             </div>
             <div class="col">
-                <input type="number" step="any" name="y-size" id="y-size" class="form-control custom-input" placeholder="New heigth" aria-label="new-width" />
+                <input type="number" step="any" min="1" name="y-size" id="y-size" class="form-control custom-input"
+                    placeholder="New heigth" aria-label="new-heigth" />
             </div>
-            
+            <div class="col">
+                <select class="form-select" aria-label="select-unit" id="measurement-unit" >
+                    <option value="in">in</option>
+                    <option value="px">px</option>
+                    <option value="cm">cm</option>
+                </select>
+            </div>
+
             <!-- Chane size button -->
             <div class="btn-group col">
-                <button class="btn btn-secondary custom-btn" id="update-size-btn">Update size</button>
+                <button class="btn btn-secondary" id="update-size-btn">Update size</button>
             </div>
         </div>
     </div>

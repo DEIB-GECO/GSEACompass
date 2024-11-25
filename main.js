@@ -20,8 +20,11 @@ const currentDate = new Date().toISOString().slice(0, 10)
 // Home directory of user running the app
 const HOME_DIR = app.getPath('home')
 
-// Default temporary plot file path
-const PLOT_PATH = join(HOME_DIR, 'gsea_plot.png')
+// Default temporary plot file path (without an extension, it gets added in the web page)
+const PLOT_PATH = join(HOME_DIR, 'gsea_plot')
+
+// Plot standard extensions
+const plotExtensions = ['.png', '.pdf', '.svg']
 
 // Utility function that collects the stderr output, shows a failure popup in case the passed
 // process returns a code different from 0 (unexpected exit) and logs it in a file
@@ -252,13 +255,13 @@ const createTableWindow = (jsonRawData, analysisType) => {
         tableWindow.webContents.send('send-analysis-data', jsonRawData, analysisType)
     })
 
-    ipcMain.on('request-enrichment-plot', (_event, selectedTerms, sizeX, sizeY, createOrUpdate) => {
+    ipcMain.on('request-enrichment-plot', (_event, selectedTerms, sizeX, sizeY, measurementUnit, createOrUpdate) => {
         let pythonProcess = null
 
         if (app.isPackaged)
-            pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['enrichment-plot', selectedTerms, sizeX, sizeY])
+            pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['enrichment-plot', selectedTerms, sizeX, sizeY, measurementUnit])
         else
-            pythonProcess = spawn('venv/bin/python', [localPath('python', 'gsea_plot'), 'enrichment-plot', selectedTerms, sizeX, sizeY])
+            pythonProcess = spawn('venv/bin/python', [localPath('python', 'gsea_plot'), 'enrichment-plot', selectedTerms, sizeX, sizeY, measurementUnit])
 
         pythonProcess.on('exit', (code) => {
             if (code == 0) {
@@ -273,7 +276,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         popupOnProcessFail(pythonProcess)
     })
 
-    ipcMain.on('request-dotplot', (_event, selectedColumnAndTerms, sizeX, sizeY, createOrUpdate) => {
+    ipcMain.on('request-dotplot', (_event, selectedColumnAndTerms, sizeX, sizeY, measurementUnit, createOrUpdate) => {
         // Create a tmp file
         const tmpFile = fileSync();
 
@@ -287,9 +290,9 @@ const createTableWindow = (jsonRawData, analysisType) => {
         let pythonProcess = null
 
         if (app.isPackaged)
-            pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['dotplot', tmpFile.name, sizeX, sizeY])
+            pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['dotplot', tmpFile.name, sizeX, sizeY, measurementUnit])
         else
-            pythonProcess = spawn('venv/bin/python', [localPath('python', 'gsea_plot'), 'dotplot', tmpFile.name, sizeX, sizeY])
+            pythonProcess = spawn('venv/bin/python', [localPath('python', 'gsea_plot'), 'dotplot', tmpFile.name, sizeX, sizeY, measurementUnit])
 
         pythonProcess.on('exit', (code) => {
             // Remove the tmp file
@@ -307,13 +310,13 @@ const createTableWindow = (jsonRawData, analysisType) => {
         popupOnProcessFail(pythonProcess)
     })
 
-    ipcMain.on('request-heatmap', (_event, selectedRow, sizeX, sizeY, createOrUpdate) => {
+    ipcMain.on('request-heatmap', (_event, selectedRow, sizeX, sizeY, measurementUnit, createOrUpdate) => {
         let pythonProcess = null
 
         if (app.isPackaged)
-            pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['heatmap', selectedRow, sizeX, sizeY])
+            pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['heatmap', selectedRow, sizeX, sizeY, measurementUnit])
         else
-            pythonProcess = spawn('venv/bin/python', [localPath('python', 'gsea_plot'), 'heatmap', selectedRow, sizeX, sizeY])
+            pythonProcess = spawn('venv/bin/python', [localPath('python', 'gsea_plot'), 'heatmap', selectedRow, sizeX, sizeY, measurementUnit])
 
         pythonProcess.on('exit', (code) => {
             if (code == 0) {
@@ -328,13 +331,13 @@ const createTableWindow = (jsonRawData, analysisType) => {
         popupOnProcessFail(pythonProcess)
     })
 
-    ipcMain.on('request-iou-plot', (_event, selectedTerms, sizeX, sizeY, createOrUpdate) => {
+    ipcMain.on('request-iou-plot', (_event, selectedTerms, sizeX, sizeY, measurementUnit, createOrUpdate) => {
         let pythonProcess = null
 
         if (app.isPackaged)
-            pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['intersection-over-union', selectedTerms, globalThis.chosenGeneSetsPath, sizeX, sizeY])
+            pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['intersection-over-union', selectedTerms, globalThis.chosenGeneSetsPath, sizeX, sizeY, measurementUnit])
         else
-            pythonProcess = spawn('venv/bin/python', [localPath('python', 'gsea_plot'), 'intersection-over-union', selectedTerms, globalThis.chosenGeneSetsPath, sizeX, sizeY])
+            pythonProcess = spawn('venv/bin/python', [localPath('python', 'gsea_plot'), 'intersection-over-union', selectedTerms, globalThis.chosenGeneSetsPath, sizeX, sizeY, measurementUnit])
 
         pythonProcess.on('exit', (code) => {
             if (code == 0) {
@@ -349,7 +352,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         popupOnProcessFail(pythonProcess)
     })
 
-    ipcMain.on('request-wordcloud', (_event, selectedColumn, sizeX, sizeY, createOrUpdate) => {
+    ipcMain.on('request-wordcloud', (_event, selectedColumn, sizeX, sizeY, measurementUnit, createOrUpdate) => {
         // Create a tmp file
         const tmpFile = fileSync();
 
@@ -363,9 +366,9 @@ const createTableWindow = (jsonRawData, analysisType) => {
         let pythonProcess = null
 
         if (app.isPackaged)
-            pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['wordcloud', tmpFile.name, sizeX, sizeY])
+            pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['wordcloud', tmpFile.name, sizeX, sizeY, measurementUnit])
         else
-            pythonProcess = spawn('venv/bin/python', [localPath('python', 'gsea_plot'), 'wordcloud', tmpFile.name, sizeX, sizeY])
+            pythonProcess = spawn('venv/bin/python', [localPath('python', 'gsea_plot'), 'wordcloud', tmpFile.name, sizeX, sizeY, measurementUnit])
 
         pythonProcess.on('exit', (code) => {
             // Remove the tmp file
@@ -436,9 +439,11 @@ const createPlotWindow = (customWidth, customHeight, plotType, plotArg) => {
 
     // Delete plot file when the window is closed
     plotWindow.on('close', _event => {
-        unlink(PLOT_PATH, (err) => {
-            if (err)
-                error('Temporary plot file ' + PLOT_PATH + ' couldn\'t be deleted.')
+        plotExtensions.forEach(ext => {
+            unlink(PLOT_PATH + ext, (err) => {
+                if (err)
+                    error('Temporary plot file ' + PLOT_PATH + ' couldn\'t be deleted.')
+            })
         })
     })
 
