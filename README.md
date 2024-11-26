@@ -1,6 +1,6 @@
 # GSEAWrap
 
-A minimalistic yet powerful app to run *GSEA*, pre-ranked *GSEA* and, **mostly**, do post-analysis elaboration on the results!
+A minimalistic yet powerful app to run *GSEA*, pre-ranked *GSEA* and do post-analysis elaboration on the results.
 
 To know more about how to use GSEAWrap and its peculiar features, check out the offical user manual: [gseawrap.gitbook.io/user-manual](https://gseawrap.gitbook.io/user-manual)
 
@@ -16,20 +16,20 @@ To know more about how to use GSEAWrap and its peculiar features, check out the 
 
 ## Frameworks
 
-This tool is super-powered by:
+This tool is powered by:
 
 - *GSEApy* on the python backend to run genomic analyses and graphical elaborations
 - *Electron.js* on the desktop frontend
 - *Datatables.js* as a view engine for post-analysis tables
 
-## Run instructions
+## Install instructions
 
-### For users
+### Binaries
 
-Simpyl download the latest stable version of GSEAWrap from the [releases page](https://github.com/DEIB-GECO/GSEAWrap/releases) and 
+Download the latest stable version of GSEAWrap from the [releases page](https://github.com/DEIB-GECO/GSEAWrap/releases) and 
 install it according to your OS. No dependency must be fulfilled or library installed.
 
-### For developers
+### Build from source
 
 Make sure, before running GSEAWrap in a development enviroment, to fulfill these run-time dependencies.
 
@@ -41,6 +41,9 @@ Follow this [link](https://www.rust-lang.org/tools/install) for the official ins
 #### Python
 
 Python3.12 and pip must be installed too, follow the official guides to install them ([python one](https://www.python.org/downloads/), [pip one](https://pypi.org/project/pip/)).
+
+#### N.B. for Windows users: 
+Make sure python and rust are in the PATH environmental variable.
 
 #### Python libraries
 
