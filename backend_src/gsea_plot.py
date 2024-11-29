@@ -10,6 +10,8 @@ import numpy as np
 import seaborn as sns
 from wordcloud import WordCloud
 from typing import Sequence, Optional, List, Tuple, Dict, Union, Any
+import fontTools
+import fontTools.ttLib.ttFont
 
 # Utility function to convert inches, cm and px
 def convert_to_inches(measurement_unit, value):
@@ -253,8 +255,9 @@ match plot_type:
         converted_size_x = convert_to_inches(measurement_unit, size_x)
         converted_size_y = convert_to_inches(measurement_unit, size_y)
         
-        if (converted_size_x > 50 || converted_size_y > 50):
-            print("Sizes could not exceed 5")
+        if (converted_size_x > 50 or converted_size_y > 50):
+            print("Plot sizes cannot exceed 50 inches.")
+            exit(1)
 
         # Convert the JSON-formatted input in a Series
         selected_terms = pd.read_json(StringIO(selected_terms_raw))[0]
@@ -293,6 +296,10 @@ match plot_type:
         converted_size_x = convert_to_inches(measurement_unit, size_x)
         converted_size_y = convert_to_inches(measurement_unit, size_y)
         
+        if (converted_size_x > 50 or converted_size_y > 50):
+            print("Plot sizes cannot exceed 50 inches.")
+            exit(1)
+        
         # Parse file content as JSON
         selected_column_and_terms = pd.read_json(selected_column_and_terms_file_path)
         
@@ -326,6 +333,10 @@ match plot_type:
         
         converted_size_x = convert_to_inches(measurement_unit, size_x)
         converted_size_y = convert_to_inches(measurement_unit, size_y)
+        
+        if (converted_size_x > 50 or converted_size_y > 50):
+            print("Plot sizes cannot exceed 50 inches.")
+            exit(1)
 
         # Convert the JSON-formatted input in a Series
         selected_row = pd.read_json(StringIO(selected_row_raw), typ="series")
@@ -350,6 +361,10 @@ match plot_type:
         
         converted_size_x = convert_to_inches(measurement_unit, size_x)
         converted_size_y = convert_to_inches(measurement_unit, size_y)
+        
+        if (converted_size_x > 50 or converted_size_y > 50):
+            print("Plot sizes cannot exceed 50 inches.")
+            exit(1)
         
         # Convert the JSON-formatted selected terms in a Series
         selected_terms = pd.read_json(StringIO(selected_terms_raw))[0]
@@ -413,6 +428,10 @@ match plot_type:
         
         converted_size_x = convert_to_px(measurement_unit, size_x)
         converted_size_y = convert_to_px(measurement_unit, size_y)
+        
+        if (converted_size_x > 3000 or converted_size_y > 3000):
+            print("Plot sizes cannot exceed 3000 pixels.")
+            exit(1)
         
         # Read selected column data from file path passed as CLI arguments
         file = open(selected_column_file_path, "r")

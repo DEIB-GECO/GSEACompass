@@ -148,7 +148,7 @@ const createGseaWindow = () => {
         if (app.isPackaged)
             pythonProcess = spawn(localPath('pythonBin', 'gsea'), [geneSetsPath, numPermutations, expressionSet, phenotypeLabels, remapOption, chipPath])
         else
-            pythonProcess = spawn('venv/bin/python', [localPath('python', 'gsea'), geneSetsPath, numPermutations, expressionSet, phenotypeLabels, remapOption, chipPath])
+            pythonProcess = spawn('python', [localPath('python', 'gsea'), geneSetsPath, numPermutations, expressionSet, phenotypeLabels, remapOption, chipPath])
 
         let jsonContent = ''
 
@@ -204,7 +204,7 @@ const createGseaPrerankedWindow = () => {
         if (app.isPackaged)
             pythonProcess = spawn(localPath('pythonBin', 'gsea_preranked'), [geneSetsPath, numPermutations, rankedListPath, remapOption, chipPath])
         else
-            pythonProcess = spawn('venv/bin/python', [localPath('python', 'gsea_preranked'), geneSetsPath, numPermutations, rankedListPath, remapOption, chipPath])
+            pythonProcess = spawn('python', [localPath('python', 'gsea_preranked'), geneSetsPath, numPermutations, rankedListPath, remapOption, chipPath])
 
         let jsonContent = ''
 
@@ -261,7 +261,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         if (app.isPackaged)
             pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['enrichment-plot', selectedTerms, sizeX, sizeY, measurementUnit])
         else
-            pythonProcess = spawn('venv/bin/python', [localPath('python', 'gsea_plot'), 'enrichment-plot', selectedTerms, sizeX, sizeY, measurementUnit])
+            pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'enrichment-plot', selectedTerms, sizeX, sizeY, measurementUnit])
 
         pythonProcess.on('exit', (code) => {
             if (code == 0) {
@@ -292,7 +292,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         if (app.isPackaged)
             pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['dotplot', tmpFile.name, sizeX, sizeY, measurementUnit])
         else
-            pythonProcess = spawn('venv/bin/python', [localPath('python', 'gsea_plot'), 'dotplot', tmpFile.name, sizeX, sizeY, measurementUnit])
+            pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'dotplot', tmpFile.name, sizeX, sizeY, measurementUnit])
 
         pythonProcess.on('exit', (code) => {
             // Remove the tmp file
@@ -300,7 +300,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
 
             if (code == 0) {
                 if (createOrUpdate == 'create')
-                    createPlotWindow(900, 500, 'dotplot', selectedColumnAndTerms)
+                    createPlotWindow(900, 800, 'dotplot', selectedColumnAndTerms)
                 else if (createOrUpdate == 'update')
                     // Send the update message only if plotWindow object is not null (.?)
                     globalThis.plotWindow?.webContents.send('plot-updated')
@@ -316,12 +316,12 @@ const createTableWindow = (jsonRawData, analysisType) => {
         if (app.isPackaged)
             pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['heatmap', selectedRow, sizeX, sizeY, measurementUnit])
         else
-            pythonProcess = spawn('venv/bin/python', [localPath('python', 'gsea_plot'), 'heatmap', selectedRow, sizeX, sizeY, measurementUnit])
+            pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'heatmap', selectedRow, sizeX, sizeY, measurementUnit])
 
         pythonProcess.on('exit', (code) => {
             if (code == 0) {
                 if (createOrUpdate == 'create')
-                    createPlotWindow(900, 500, 'heatmap', selectedRow)
+                    createPlotWindow(900, 800, 'heatmap', selectedRow)
                 else if (createOrUpdate == 'update')
                     // Send the update message just if plotWindow object is not null (.?)
                     globalThis.plotWindow?.webContents.send('plot-updated')
@@ -337,7 +337,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         if (app.isPackaged)
             pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['intersection-over-union', selectedTerms, globalThis.chosenGeneSetsPath, sizeX, sizeY, measurementUnit])
         else
-            pythonProcess = spawn('venv/bin/python', [localPath('python', 'gsea_plot'), 'intersection-over-union', selectedTerms, globalThis.chosenGeneSetsPath, sizeX, sizeY, measurementUnit])
+            pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'intersection-over-union', selectedTerms, globalThis.chosenGeneSetsPath, sizeX, sizeY, measurementUnit])
 
         pythonProcess.on('exit', (code) => {
             if (code == 0) {
@@ -368,7 +368,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         if (app.isPackaged)
             pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['wordcloud', tmpFile.name, sizeX, sizeY, measurementUnit])
         else
-            pythonProcess = spawn('venv/bin/python', [localPath('python', 'gsea_plot'), 'wordcloud', tmpFile.name, sizeX, sizeY, measurementUnit])
+            pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'wordcloud', tmpFile.name, sizeX, sizeY, measurementUnit])
 
         pythonProcess.on('exit', (code) => {
             // Remove the tmp file
@@ -399,7 +399,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
             if (app.isPackaged)
                 pythonProcess = spawn(localPath('pythonBin', 'gene_set_info'), [selectedTerm, localPath('resource', 'msigdb.db')])
             else
-                pythonProcess = spawn('venv/bin/python', [localPath('python', 'gene_set_info'), selectedTerm, localPath('resource', 'msigdb.db')])
+                pythonProcess = spawn('python', [localPath('python', 'gene_set_info'), selectedTerm, localPath('resource', 'msigdb.db')])
 
             let jsonContent = ''
 
@@ -442,7 +442,7 @@ const createPlotWindow = (customWidth, customHeight, plotType, plotArg) => {
         plotExtensions.forEach(ext => {
             unlink(PLOT_PATH + ext, (err) => {
                 if (err)
-                    error('Temporary plot file ' + PLOT_PATH + ' couldn\'t be deleted.')
+                    error('Temporary plot file ' + PLOT_PATH + ' cannot be deleted.')
             })
         })
     })
@@ -494,4 +494,4 @@ app.on('window-all-closed', () => {
 
         app.quit()
     }
-})
+})<
