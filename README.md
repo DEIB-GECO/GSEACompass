@@ -5,10 +5,9 @@ A minimalistic yet powerful app to run *GSEA*, pre-ranked *GSEA* and *ssGSEA* an
 ## Outline
 
 - [Frameworks](#frameworks)
-- [Run instructions](#run-instructions)
+- [Build instructions](#build-instructions)
   - [Download](#download)
   - [Dependencies](#run-dependencies)
-- [Build instructions](#build-instructions)
   - [Dependencies](#build-dependencies)
   - [Build and run](#build-and-run)
 
@@ -20,11 +19,11 @@ This tool is super-powered by:
 - *Electron.js* on the desktop frontend
 - *Datatables.js* as a view engine for post-analysis tables
 
-## Run instructions
+## Build instructions
 
 ### Download
 
-Download the latest stable version of GSEAWrap from the [releases page](https://github.com/DEIB-GECO/GSEAWrap/releases).
+Download GSEAWrap source code
 
 ### Run dependencies
 
@@ -35,7 +34,21 @@ Follow this [link](https://www.rust-lang.org/tools/install) for the official ins
 
 #### Python
 
-Python3.12 and pip must be installed too, follow the official guides to install them ([python one](https://www.python.org/downloads/), [pip one](https://pypi.org/project/pip/)).
+Python3.12 and pip must be installed too, follow the official guides to install them ([Python](https://www.python.org/downloads/), [pip](https://pypi.org/project/pip/)).
+
+#### System
+The follow system dependencies are required, install only those regarding your operating system:
+
+##### Ubuntu-based
+Run the following command if your OS is Ubuntu or Ubuntu-based:
+```bash
+sudo apt install python3-devel
+```
+#### Fedora/RHEL
+Run the following command if your OS is Fedora or similar:
+```bash
+sudo dnf install libquadmath libquadmath-devel
+```
 
 #### Python libraries
 
@@ -46,8 +59,6 @@ pip install -r requirements.txt
 ```
 
 This will install all python-based dependencies needed to run the app.
-
-## Build instructions
 
 ### Build dependencies
 
@@ -72,7 +83,7 @@ npm install
 To build and run the application just run the following command, make sure to be in the repository directory:
 
 ```bash
-npm start
+npm start run
 ```
 
 In order to run the app, be sure to have installed the run dependencies too (see [up above](#run-dependencies)).

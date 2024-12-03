@@ -12,6 +12,9 @@ from wordcloud import WordCloud
 from typing import Sequence, Optional, List, Tuple, Dict, Union, Any
 import fontTools
 import fontTools.ttLib.ttFont
+import fontTools.ttLib.tables.otTables
+import fontTools.otlLib.maxContextCalc
+import fontTools.subset.util
 
 # Utility function to convert inches, cm and px
 def convert_to_inches(measurement_unit, value):
