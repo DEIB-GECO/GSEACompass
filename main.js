@@ -469,7 +469,7 @@ const createGeneSetInfoWindow = (geneSetInfo) => {
 }
 
 // Set up the app
-// Menu.setApplicationMenu(null)
+Menu.setApplicationMenu(null)
 app.disableHardwareAcceleration()
 
 // Needed for Windows Squirrel package

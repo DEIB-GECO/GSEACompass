@@ -80,7 +80,7 @@ try:
                     max_size=1000,
                     permutation_num=num_permutation,
                     outdir=None,
-                    seed=6)
+                    seed=7)
 except Exception:
     errorAndExit("GSEA preranked failed while computing the analysis.")
 

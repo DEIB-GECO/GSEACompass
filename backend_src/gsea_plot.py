@@ -378,8 +378,8 @@ match plot_type:
         with open(gene_sets_path, "r") as gene_sets_file:
             col_count = [ len(line.split("\t")) for line in gene_sets_file.readlines() ]
         
-        # Read the gene sets database CSV file
-        gene_sets_database = pd.read_csv(gene_sets_path, sep="\t", names=range(max(col_count)), header=None, index_col=0)
+        # Read the gene sets database CSV file       
+        gene_sets_database = pd.read_csv(gene_sets_path, sep="\t", names=range(max(col_count)), header=None, index_col=0, engine="python")
         
         genesets = {}
         labels = {}
