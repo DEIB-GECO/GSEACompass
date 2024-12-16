@@ -5,11 +5,11 @@ const chipObj = document.querySelector("#chip")
 const submitBtn = document.querySelector("#submit")
 
 submitBtn.addEventListener("click", (event) => {
-    const geneSetsPath = geneSetsObj.files[0].path
+    const geneSetsPath = geneSetsObj.files[0]
     const numPermutations = numPermutationsObj.value
-    const rankedListPath = rankedListObj.files[0].path
+    const rankedListPath = rankedListObj.files[0]
     const remapOption = document.querySelector('[name="remap"]:checked').value
-    const chipPath = chipObj.files[0] != null ? chipObj.files[0].path : null
+    const chipPath = chipObj.files[0]
 
     window.electronAPI.sendDataPreranked(geneSetsPath, numPermutations, rankedListPath, remapOption, chipPath)
 })
