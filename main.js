@@ -74,7 +74,9 @@ const localPath = (type, file) => {
             ext = '.py'
             break
         case 'pythonBin':
-			dir = join('backend_src', 'dist', file)
+			dir = join('backend_src', 'dist', 'gseawrap')
+			if (process.platform == 'win32')
+				ext = '.exe'
             break
         case 'renderer':
             dir = 'renderer_src'
