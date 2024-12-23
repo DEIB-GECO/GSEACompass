@@ -7,11 +7,9 @@ To know more about how to use GSEAWrap and its peculiar features, check out the 
 ## Outline
 
 - [Frameworks](#frameworks)
-- [Run instructions](#run-instructions)
-  - [For users](#for-users)
-  - [For developers](#for-developers)
-- [Build instructions](#build-instructions)
-  - [Dependencies](#build-dependencies)
+- [Install instructions](#install-instructions)
+  - [Binaries](#binaries)
+  - [Build from source](#build-from-source)
   - [Build and run](#build-and-run)
 
 ## Frameworks
@@ -31,7 +29,7 @@ install it according to your OS. No dependency must be fulfilled or library inst
 
 ### Build from source
 
-Make sure, before running GSEAWrap in a development enviroment, to fulfill these run-time dependencies.
+Make sure, before running GSEAWrap in a development enviroment, to fulfill these dependencies.
 
 #### Rust
 
@@ -43,7 +41,7 @@ Follow this [link](https://www.rust-lang.org/tools/install) for the official ins
 Python3.12 and pip must be installed too, follow the official guides to install them ([python one](https://www.python.org/downloads/), [pip one](https://pypi.org/project/pip/)).
 
 #### N.B. for Windows users: 
-Make sure python and rust are in the PATH environmental variable.
+Make sure Python and Rust are in the PATH environmental variable.
 
 #### Python libraries
 
@@ -54,10 +52,6 @@ pip install -r requirements.txt
 ```
 
 This will install all python-based dependencies needed to run the app.
-
-## Build instructions
-
-### Build dependencies
 
 #### Node.js
 
@@ -76,6 +70,8 @@ npm install
 ```
 
 ### Build and run
+
+Before building the app you need to do download the Molecular Signatures Database from this [link](https://www.gsea-msigdb.org/gsea/msigdb/download_file.jsp?filePath=/msigdb/release/2024.1.Hs/msigdb_v2024.1.Hs.db.zip) (MSigDB) to have a fully functional enviroment. Download it, unzip it, rename it to ```msigdb.db``` and put it inside a new folder called ```misc_resources```.
 
 To build and run the application just run the following command, make sure to be in the repository directory:
 
