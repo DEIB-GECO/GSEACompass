@@ -59,7 +59,7 @@ const popupOnProcessFail = (process) => {
 const localPath = (type, file) => {
     let dir = ''
     let ext = ''
-    
+
     switch (type) {
         case 'web':
             dir = 'web_pages'
@@ -74,9 +74,9 @@ const localPath = (type, file) => {
             ext = '.py'
             break
         case 'pythonBin':
-			dir = join('backend_src', 'dist', 'gseawrap')
-			if (process.platform == 'win32')
-				ext = '.exe'
+            dir = join('backend_src', 'dist', 'gseawrap')
+            if (process.platform == 'win32')
+                ext = '.exe'
             break
         case 'renderer':
             dir = 'renderer_src'
@@ -118,7 +118,7 @@ const createMainWindow = () => {
 
     ipcMain.on('open-gsea-preranked', () => {
         createGseaPrerankedWindow()
-        mainWindow.close()        
+        mainWindow.close()
     })
 
     ipcMain.on('open-gsea', () => {
@@ -169,7 +169,7 @@ const createGseaWindow = () => {
                 gseaWindow.loadFile(localPath('web', 'gsea'))
             }
         })
-        
+
         popupOnProcessFail(pythonProcess)
     })
 
@@ -288,7 +288,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
             if (err)
                 error('The selected data file, to be passed to python script, couldn\'t be created.')
         })
-        
+
         let pythonProcess = null
 
         if (app.isPackaged)
@@ -471,7 +471,23 @@ const createGeneSetInfoWindow = (geneSetInfo) => {
 }
 
 // Set up the app
-Menu.setApplicationMenu(null)
+const menuTemplate = [
+    {
+        label: 'About',
+        submenu: [{
+            label: 'Third-party licenses',
+            click() {
+                const licenseWindow = new BrowserWindow({
+                    width: 800,
+                    height: 600,
+                    icon: localPath('icon', 'GW.png')
+                })
+                licenseWindow.loadFile('NOTICE.md')
+            }
+        }]
+    }
+]
+Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate))
 app.disableHardwareAcceleration()
 
 // Needed for Windows Squirrel package
@@ -491,7 +507,7 @@ app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         unlink(join(HOME_DIR, 'gseawrap_python_session.pkl'), (err) => {
             if (err)
-                error('\n========================\nWarning: The file ' + join(HOME_DIR, 'gseawrap_python_session.pkl couldn\'t be deleted.') +  ' \n========================\n')
+                error('\n========================\nWarning: The file ' + join(HOME_DIR, 'gseawrap_python_session.pkl couldn\'t be deleted.') + ' \n========================\n')
         })
 
         app.quit()
