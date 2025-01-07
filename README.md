@@ -71,7 +71,7 @@ npm install
 
 ### Build and run
 
-Before building the app you need to do download the Molecular Signatures Database from this [link](https://www.gsea-msigdb.org/gsea/msigdb/download_file.jsp?filePath=/msigdb/release/2024.1.Hs/msigdb_v2024.1.Hs.db.zip) (MSigDB) to have a fully functional enviroment. Download it, unzip it, rename it to ```msigdb.db``` and put it inside a new folder called ```misc_resources```.
+Before building the app you need to do download the Molecular Signatures Database from this [link](https://www.gsea-msigdb.org/gsea/msigdb/download_file.jsp?filePath=/msigdb/release/2024.1.Hs/msigdb_v2024.1.Hs.db.zip) (MSigDB) to have a fully functional enviroment. Download it, unzip it, rename it to ```msigdb.db``` and put it inside a new folder - inside the application root folder - called ```misc_resources```.
 
 To build and run the application just run the following command, make sure to be in the repository directory:
 
