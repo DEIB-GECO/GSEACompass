@@ -83,7 +83,7 @@ try:
                     max_size=1000,
                     permutation_num=num_permutation,
                     outdir=None,
-                    seed=6)
+                    seed=7)
 except Exception:
     errorAndExit("GSEA preranked failed while computing the analysis.")
 
@@ -93,4 +93,4 @@ print(res_json)
 sys.stdout.flush()
 
 # Save the python session on a file
-dill.dump_session(os.path.join(HOME_DIR, "gseawrap_python_session.pkl"))
+dill.dump_session(os.path.join(HOME_DIR, "gseacompass_python_session.pkl"))

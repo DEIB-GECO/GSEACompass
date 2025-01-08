@@ -186,9 +186,11 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                     },
                     {
                         text: 'Deselect all',
+                        name: 'deselectAll',
+                        enabled: false,
                         action: () => {
-                            table.columns().deselect()
-                            table.rows().deselect()
+                            table.columns({ selected: true }).deselect()
+                            table.rows({ selected: true }).deselect()
                         }
                     }
                 ]
@@ -235,14 +237,17 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
         const selectedColumns = table.columns({ selected: true })
         const numSelectedCols = selectedColumns.count()
 
+        // Show or hide each top bar button if a specific condition is true
+        table.button(['deselectAll:name']).enable(numSelectedRows > 0 || numSelectedCols > 0)
         table.button(['enrichmentPlot:name']).enable(numSelectedRows > 0 && numSelectedCols === 0)
-        table.button(['dotplot:name']).enable(numSelectedCols === 1 && selectedColumns.titles()[0] !== "Term" && selectedColumns.titles()[0] !== "Lead_genes")
+        table.button(['dotplot:name']).enable(numSelectedCols === 1 && selectedColumns.titles()[0] !== "Term" && selectedColumns.titles()[0] !== "Lead_genes" 
+            && selectedColumns.titles()[0] !== "Gene %" && selectedColumns.titles()[0] !== "Tag %")
         table.button(['heatmap:name']).enable(numSelectedRows === 1 && analysisType === 'gsea')
         table.button(['iouPlot:name']).enable(numSelectedRows >= 2 && numSelectedCols === 0)
         table.button(['wordcloud:name']).enable(numSelectedCols === 1 && (selectedColumns.titles()[0] === "Term" || selectedColumns.titles()[0] === "Lead_genes"))
     })
 
-    // Every time a row is double clicked on
+    // Every time a row is double clicked
     table.on('dblclick', 'tr', (event) => {
         const dblClickedTr = event.target.closest('tr')
 
