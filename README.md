@@ -1,4 +1,4 @@
-# GSEAWrap
+# GSEACompass 🧭
 
 A minimalistic yet powerful app to run *GSEA*, pre-ranked *GSEA* and *ssGSEA* and, **mostly**, do post-analysis elaboration on the results!
 
@@ -23,7 +23,7 @@ This tool is super-powered by:
 
 ### Download
 
-Download GSEAWrap source code
+Download GSEACompass source code
 
 ### Run dependencies
 
@@ -52,7 +52,7 @@ sudo dnf install libquadmath libquadmath-devel
 
 #### Python libraries
 
-Once Python and pip are installed, open the directory in which you have unzipped the GSEAWrap archive and run the command:
+Once Python and pip are installed, open the directory in which you have unzipped the GSEACompass archive and run the command:
 
 ```bash
 pip install -r requirements.txt

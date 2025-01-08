@@ -238,7 +238,7 @@ def heatmap_modified(
 HOME_DIR = os.path.expanduser("~")
 
 # Load the saved python session, with all its variables
-dill.load_session(os.path.join(HOME_DIR, "gseawrap_python_session.pkl"))
+dill.load_session(os.path.join(HOME_DIR, "gseacompass_python_session.pkl"))
 
 # Default plot file name and extensions
 PLOT_FILE = os.path.join(HOME_DIR, "gsea_plot")

@@ -74,7 +74,7 @@ const localPath = (type, file) => {
             ext = '.py'
             break
         case 'pythonBin':
-            dir = join('backend_src', 'dist', 'gseawrap')
+            dir = join('backend_src', 'dist', 'gseacompass')
             if (process.platform == 'win32')
                 ext = '.exe'
             break
@@ -99,8 +99,8 @@ const localPath = (type, file) => {
 
 // Setup the logger
 // It will be used just for errors and it must save the logs in the local directory
-const LOG_FILE_NAME = 'gseawrap_error_' + currentDate
-transports.file.resolvePathFn = () => join(HOME_DIR, 'GSEAWrap_log', LOG_FILE_NAME)
+const LOG_FILE_NAME = 'gseacompass_error_' + currentDate
+transports.file.resolvePathFn = () => join(HOME_DIR, 'GSEACompass_log', LOG_FILE_NAME)
 transports.file.level = 'error'
 
 globalThis.chosenGeneSetsPath = ''
@@ -110,7 +110,7 @@ const createMainWindow = () => {
     const mainWindow = new BrowserWindow({
         width: 800,
         height: 600,
-        icon: localPath('icon', 'GW.png'),
+        icon: localPath('icon', 'compass_1024px.png'),
         webPreferences: {
             preload: localPath('preload', 'main_preload')
         }
@@ -134,7 +134,7 @@ const createGseaWindow = () => {
     const gseaWindow = new BrowserWindow({
         width: 800,
         height: 670,
-        icon: localPath('icon', 'GW.png'),
+        icon: localPath('icon', 'compass_1024px.png'),
         webPreferences: {
             preload: localPath('preload', 'gsea_preload')
         }
@@ -190,7 +190,7 @@ const createGseaPrerankedWindow = () => {
     const gseaPrerankedWindow = new BrowserWindow({
         width: 800,
         height: 600,
-        icon: localPath('icon', 'GW.png'),
+        icon: localPath('icon', 'compass_1024px.png'),
         webPreferences: {
             preload: localPath('preload', 'gsea_preranked_preload')
         }
@@ -247,7 +247,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
     const tableWindow = new BrowserWindow({
         width: 800,
         height: 600,
-        icon: localPath('icon', 'GW.png'),
+        icon: localPath('icon', 'compass_1024px.png'),
         webPreferences: {
             preload: localPath('preload', 'table_preload')
         }
@@ -428,7 +428,7 @@ const createPlotWindow = (customWidth, customHeight, plotType, plotArg) => {
     globalThis.plotWindow = new BrowserWindow({
         width: customWidth,
         height: customHeight,
-        icon: localPath('icon', 'GW.png'),
+        icon: localPath('icon', 'compass_1024px.png'),
         webPreferences: {
             preload: localPath('preload', 'plot_preload')
         }
@@ -457,7 +457,7 @@ const createGeneSetInfoWindow = (geneSetInfo) => {
     const geneSetInfoWindow = new BrowserWindow({
         width: 600,
         height: 400,
-        icon: localPath('icon', 'GW.png'),
+        icon: localPath('icon', 'compass_1024px.png'),
         webPreferences: {
             preload: localPath('preload', 'gene_set_info_preload')
         }
@@ -480,7 +480,7 @@ const menuTemplate = [
                 const licenseWindow = new BrowserWindow({
                     width: 800,
                     height: 600,
-                    icon: localPath('icon', 'GW.png')
+                    icon: localPath('icon', 'compass_1024px.png')
                 })
                 licenseWindow.loadFile('NOTICE.md')
             }
@@ -505,11 +505,12 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
-        unlink(join(HOME_DIR, 'gseawrap_python_session.pkl'), (err) => {
+        unlink(join(HOME_DIR, 'gseacompass_python_session.pkl'), (err) => {
             if (err)
-                error('\n========================\nWarning: The file ' + join(HOME_DIR, 'gseawrap_python_session.pkl couldn\'t be deleted.') + ' \n========================\n')
+                error('\n========================\nWarning: The file ' + join(HOME_DIR, 'gseacompass_python_session.pkl couldn\'t be deleted.') + ' \n========================\n')
         })
 
         app.quit()
     }
 })
+

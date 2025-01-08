@@ -1,7 +1,7 @@
 {
-    "name": "gseawrap",
+    "name": "gseacompass",
     "version": "1.0.0",
-    "description": "gseawrap",
+    "description": "gseacompass",
     "main": "./main.js",
     "scripts": {
         "start": "electron-forge start",
@@ -15,7 +15,7 @@
         "forge": {
             "packagerConfig": {
                 "asar": false,
-                "icon": "icons/GW.png",
+                "icon": "icons/compass_1024px.png",
                 "ignore": [
                     "venv",
                     "test_data",
@@ -25,7 +25,11 @@
             "makers": [
                 {
                     "name": "@electron-forge/maker-squirrel",
-                    "config": {}
+                    "config": {
+                        "options": {
+                            "icon": "icons/compass_1024px.png"
+                        }
+                    }
                 },
                 {
                     "name": "@electron-forge/maker-zip",
@@ -37,7 +41,7 @@
                     "name": "@electron-forge/maker-rpm",
                     "config": {
                         "options": {
-                            "icon": "icons/GW.png"
+                            "icon": "icons/compass_1024px.png"
                         }
                     }
                 },
@@ -45,7 +49,7 @@
                     "name": "@electron-forge/maker-deb",
                     "config": {
                         "options": {
-                            "icon": "icons/GW.png"
+                            "icon": "icons/compass_1024px.png"
                         }
                     }
                 }
