@@ -39,9 +39,9 @@ try:
 except Exception:
     errorAndExit("The expression set file is malformed and cannot be intepreted.")
 
-# Check if any value missing in the expression set file
-# Earch row of the expression set must have the same number of fields
-if (expression_set.isnull().any().any() or expression_set.index.hasnans):
+# Check if any value is missing in the expression set file (except for the description column)
+# Each row of the expression set must have the same number of fields
+if (expression_set.drop(expression_set.columns[0], axis=1).isnull().any().any() or expression_set.index.hasnans):
     errorAndExit("The expression set file has some missing values and cannot be used.")
 
 # Check if any cell of the expression set file (except description column) is not numeric
@@ -99,4 +99,4 @@ print(res_json)
 sys.stdout.flush()
 
 # Save the python session in a file
-dill.dump_session(os.path.join(HOME_DIR, "gseawrap_python_session.pkl"))
+dill.dump_session(os.path.join(HOME_DIR, "gseacompass_python_session.pkl"))

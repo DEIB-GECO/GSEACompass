@@ -11,7 +11,7 @@ import fixPath from 'fix-path'
 import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
 
-// Needed in Linux as OSX enviroments, in which Electron may not recognize the $PATH correctly
+// Needed in Linux and OSX enviroments, in which Electron may not recognize the $PATH correctly
 fixPath()
 
 // Current date in yyyy-mm-dd format as a string
@@ -20,8 +20,11 @@ const currentDate = new Date().toISOString().slice(0, 10)
 // Home directory of user running the app
 const HOME_DIR = app.getPath('home')
 
-// Default temporary plot file path
-const PLOT_PATH = join(HOME_DIR, 'gsea_plot.png')
+// Default temporary plot file path (without an extension, it gets added in the web page)
+const PLOT_PATH = join(HOME_DIR, 'gsea_plot')
+
+// Plot standard extensions
+const plotExtensions = ['.png', '.pdf', '.svg']
 
 // Utility function that collects the stderr output, shows a failure popup in case the passed
 // process returns a code different from 0 (unexpected exit) and logs it in a file
@@ -56,6 +59,7 @@ const popupOnProcessFail = (process) => {
 const localPath = (type, file) => {
     let dir = ''
     let ext = ''
+
     switch (type) {
         case 'web':
             dir = 'web_pages'
@@ -70,7 +74,9 @@ const localPath = (type, file) => {
             ext = '.py'
             break
         case 'pythonBin':
-			dir = join('backend_src', 'dist', file)
+            dir = join('backend_src', 'dist', 'gseacompass')
+            if (process.platform == 'win32')
+                ext = '.exe'
             break
         case 'renderer':
             dir = 'renderer_src'
@@ -93,8 +99,8 @@ const localPath = (type, file) => {
 
 // Setup the logger
 // It will be used just for errors and it must save the logs in the local directory
-const LOG_FILE_NAME = 'gseawrap_error_' + currentDate
-transports.file.resolvePathFn = () => join(HOME_DIR, 'GSEAWrap_log', LOG_FILE_NAME)
+const LOG_FILE_NAME = 'gseacompass_error_' + currentDate
+transports.file.resolvePathFn = () => join(HOME_DIR, 'GSEACompass_log', LOG_FILE_NAME)
 transports.file.level = 'error'
 
 globalThis.chosenGeneSetsPath = ''
@@ -104,7 +110,7 @@ const createMainWindow = () => {
     const mainWindow = new BrowserWindow({
         width: 800,
         height: 600,
-        icon: localPath('icon', 'GW.png'),
+        icon: localPath('icon', 'compass_1024px.png'),
         webPreferences: {
             preload: localPath('preload', 'main_preload')
         }
@@ -112,7 +118,7 @@ const createMainWindow = () => {
 
     ipcMain.on('open-gsea-preranked', () => {
         createGseaPrerankedWindow()
-        mainWindow.close()        
+        mainWindow.close()
     })
 
     ipcMain.on('open-gsea', () => {
@@ -128,7 +134,7 @@ const createGseaWindow = () => {
     const gseaWindow = new BrowserWindow({
         width: 800,
         height: 670,
-        icon: localPath('icon', 'GW.png'),
+        icon: localPath('icon', 'compass_1024px.png'),
         webPreferences: {
             preload: localPath('preload', 'gsea_preload')
         }
@@ -137,6 +143,9 @@ const createGseaWindow = () => {
     // Message sent by the GseaWindow renderer when a GSEA analysis has been requested
     ipcMain.on('send-data-gsea', (_event, geneSetsPath, numPermutations, expressionSet, phenotypeLabels, remapOption, chipPath) => {
         let pythonProcess = null
+
+        // Show the loading animation web page
+        gseaWindow.loadFile(localPath('web', 'loading'))
 
         if (app.isPackaged)
             pythonProcess = spawn(localPath('pythonBin', 'gsea'), [geneSetsPath, numPermutations, expressionSet, phenotypeLabels, remapOption, chipPath])
@@ -154,6 +163,10 @@ const createGseaWindow = () => {
                 globalThis.chosenGeneSetsPath = geneSetsPath
                 createTableWindow(jsonContent, 'gsea')
                 gseaWindow.close()
+            }
+            // In case of error show the GSEA web page
+            else {
+                gseaWindow.loadFile(localPath('web', 'gsea'))
             }
         })
 
@@ -177,7 +190,7 @@ const createGseaPrerankedWindow = () => {
     const gseaPrerankedWindow = new BrowserWindow({
         width: 800,
         height: 600,
-        icon: localPath('icon', 'GW.png'),
+        icon: localPath('icon', 'compass_1024px.png'),
         webPreferences: {
             preload: localPath('preload', 'gsea_preranked_preload')
         }
@@ -186,6 +199,9 @@ const createGseaPrerankedWindow = () => {
     // Message sent by the GseaPrerankedWindow renderer when a preranked analysis has been requested
     ipcMain.on('send-data-preranked', (_event, geneSetsPath, numPermutations, rankedListPath, remapOption, chipPath) => {
         let pythonProcess = null
+
+        // Show the loading animation web page
+        gseaPrerankedWindow.loadFile(localPath('web', 'loading'))
 
         if (app.isPackaged)
             pythonProcess = spawn(localPath('pythonBin', 'gsea_preranked'), [geneSetsPath, numPermutations, rankedListPath, remapOption, chipPath])
@@ -203,6 +219,11 @@ const createGseaPrerankedWindow = () => {
                 globalThis.chosenGeneSetsPath = geneSetsPath
                 createTableWindow(jsonContent, 'gsea_preranked')
                 gseaPrerankedWindow.close()
+            }
+            // In case of error
+            else {
+                // Show the GSEA web page
+                gseaPrerankedWindow.loadFile(localPath('web', 'gsea_preranked'))
             }
         })
 
@@ -226,7 +247,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
     const tableWindow = new BrowserWindow({
         width: 800,
         height: 600,
-        icon: localPath('icon', 'GW.png'),
+        icon: localPath('icon', 'compass_1024px.png'),
         webPreferences: {
             preload: localPath('preload', 'table_preload')
         }
@@ -236,13 +257,13 @@ const createTableWindow = (jsonRawData, analysisType) => {
         tableWindow.webContents.send('send-analysis-data', jsonRawData, analysisType)
     })
 
-    ipcMain.on('request-enrichment-plot', (_event, selectedTerms, sizeX, sizeY, createOrUpdate) => {
+    ipcMain.on('request-enrichment-plot', (_event, selectedTerms, sizeX, sizeY, measurementUnit, createOrUpdate) => {
         let pythonProcess = null
 
         if (app.isPackaged)
-            pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['enrichment-plot', selectedTerms, sizeX, sizeY])
+            pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['enrichment-plot', selectedTerms, sizeX, sizeY, measurementUnit])
         else
-            pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'enrichment-plot', selectedTerms, sizeX, sizeY])
+            pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'enrichment-plot', selectedTerms, sizeX, sizeY, measurementUnit])
 
         pythonProcess.on('exit', (code) => {
             if (code == 0) {
@@ -257,7 +278,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         popupOnProcessFail(pythonProcess)
     })
 
-    ipcMain.on('request-dotplot', (_event, selectedColumnAndTerms, sizeX, sizeY, createOrUpdate) => {
+    ipcMain.on('request-dotplot', (_event, selectedColumnAndTerms, sizeX, sizeY, measurementUnit, createOrUpdate) => {
         // Create a tmp file
         const tmpFile = fileSync();
 
@@ -267,13 +288,13 @@ const createTableWindow = (jsonRawData, analysisType) => {
             if (err)
                 error('The selected data file, to be passed to python script, couldn\'t be created.')
         })
-        
+
         let pythonProcess = null
 
         if (app.isPackaged)
-            pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['dotplot', tmpFile.name, sizeX, sizeY])
+            pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['dotplot', tmpFile.name, sizeX, sizeY, measurementUnit])
         else
-            pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'dotplot', tmpFile.name, sizeX, sizeY])
+            pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'dotplot', tmpFile.name, sizeX, sizeY, measurementUnit])
 
         pythonProcess.on('exit', (code) => {
             // Remove the tmp file
@@ -281,9 +302,9 @@ const createTableWindow = (jsonRawData, analysisType) => {
 
             if (code == 0) {
                 if (createOrUpdate == 'create')
-                    createPlotWindow(900, 500, 'dotplot', selectedColumnAndTerms)
+                    createPlotWindow(900, 800, 'dotplot', selectedColumnAndTerms)
                 else if (createOrUpdate == 'update')
-                    // Send the update message just if plotWindow object is not null (.?)
+                    // Send the update message only if plotWindow object is not null (.?)
                     globalThis.plotWindow?.webContents.send('plot-updated')
             }
         })
@@ -291,18 +312,18 @@ const createTableWindow = (jsonRawData, analysisType) => {
         popupOnProcessFail(pythonProcess)
     })
 
-    ipcMain.on('request-heatmap', (_event, selectedRow, sizeX, sizeY, createOrUpdate) => {
+    ipcMain.on('request-heatmap', (_event, selectedRow, sizeX, sizeY, measurementUnit, createOrUpdate) => {
         let pythonProcess = null
 
         if (app.isPackaged)
-            pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['heatmap', selectedRow, sizeX, sizeY])
+            pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['heatmap', selectedRow, sizeX, sizeY, measurementUnit])
         else
-            pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'heatmap', selectedRow, sizeX, sizeY])
+            pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'heatmap', selectedRow, sizeX, sizeY, measurementUnit])
 
         pythonProcess.on('exit', (code) => {
             if (code == 0) {
                 if (createOrUpdate == 'create')
-                    createPlotWindow(900, 500, 'heatmap', selectedRow)
+                    createPlotWindow(900, 800, 'heatmap', selectedRow)
                 else if (createOrUpdate == 'update')
                     // Send the update message just if plotWindow object is not null (.?)
                     globalThis.plotWindow?.webContents.send('plot-updated')
@@ -312,13 +333,13 @@ const createTableWindow = (jsonRawData, analysisType) => {
         popupOnProcessFail(pythonProcess)
     })
 
-    ipcMain.on('request-iou-plot', (_event, selectedTerms, sizeX, sizeY, createOrUpdate) => {
+    ipcMain.on('request-iou-plot', (_event, selectedTerms, sizeX, sizeY, measurementUnit, createOrUpdate) => {
         let pythonProcess = null
 
         if (app.isPackaged)
-            pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['intersection-over-union', selectedTerms, globalThis.chosenGeneSetsPath, sizeX, sizeY])
+            pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['intersection-over-union', selectedTerms, globalThis.chosenGeneSetsPath, sizeX, sizeY, measurementUnit])
         else
-            pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'intersection-over-union', selectedTerms, globalThis.chosenGeneSetsPath, sizeX, sizeY])
+            pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'intersection-over-union', selectedTerms, globalThis.chosenGeneSetsPath, sizeX, sizeY, measurementUnit])
 
         pythonProcess.on('exit', (code) => {
             if (code == 0) {
@@ -333,7 +354,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         popupOnProcessFail(pythonProcess)
     })
 
-    ipcMain.on('request-wordcloud', (_event, selectedColumn, sizeX, sizeY, createOrUpdate) => {
+    ipcMain.on('request-wordcloud', (_event, selectedColumn, sizeX, sizeY, measurementUnit, createOrUpdate) => {
         // Create a tmp file
         const tmpFile = fileSync();
 
@@ -347,9 +368,9 @@ const createTableWindow = (jsonRawData, analysisType) => {
         let pythonProcess = null
 
         if (app.isPackaged)
-            pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['wordcloud', tmpFile.name, sizeX, sizeY])
+            pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['wordcloud', tmpFile.name, sizeX, sizeY, measurementUnit])
         else
-            pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'wordcloud', tmpFile.name, sizeX, sizeY])
+            pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'wordcloud', tmpFile.name, sizeX, sizeY, measurementUnit])
 
         pythonProcess.on('exit', (code) => {
             // Remove the tmp file
@@ -407,7 +428,7 @@ const createPlotWindow = (customWidth, customHeight, plotType, plotArg) => {
     globalThis.plotWindow = new BrowserWindow({
         width: customWidth,
         height: customHeight,
-        icon: localPath('icon', 'GW.png'),
+        icon: localPath('icon', 'compass_1024px.png'),
         webPreferences: {
             preload: localPath('preload', 'plot_preload')
         }
@@ -420,9 +441,11 @@ const createPlotWindow = (customWidth, customHeight, plotType, plotArg) => {
 
     // Delete plot file when the window is closed
     plotWindow.on('close', _event => {
-        unlink(PLOT_PATH, (err) => {
-            if (err)
-                error('Temporary plot file ' + PLOT_PATH + ' couldn\'t be deleted.')
+        plotExtensions.forEach(ext => {
+            unlink(PLOT_PATH + ext, (err) => {
+                if (err)
+                    error('Temporary plot file ' + PLOT_PATH + ' cannot be deleted.')
+            })
         })
     })
 
@@ -434,7 +457,7 @@ const createGeneSetInfoWindow = (geneSetInfo) => {
     const geneSetInfoWindow = new BrowserWindow({
         width: 600,
         height: 400,
-        icon: localPath('icon', 'GW.png'),
+        icon: localPath('icon', 'compass_1024px.png'),
         webPreferences: {
             preload: localPath('preload', 'gene_set_info_preload')
         }
@@ -447,8 +470,24 @@ const createGeneSetInfoWindow = (geneSetInfo) => {
     geneSetInfoWindow.loadFile(localPath('web', 'gene_set_info'))
 }
 
-//  Set up the app
-// Menu.setApplicationMenu(null)
+// Set up the app
+const menuTemplate = [
+    {
+        label: 'About',
+        submenu: [{
+            label: 'Third-party licenses',
+            click() {
+                const licenseWindow = new BrowserWindow({
+                    width: 800,
+                    height: 600,
+                    icon: localPath('icon', 'compass_1024px.png')
+                })
+                licenseWindow.loadFile('NOTICE.md')
+            }
+        }]
+    }
+]
+Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate))
 app.disableHardwareAcceleration()
 
 // Needed for Windows Squirrel package
@@ -456,11 +495,6 @@ if (require('electron-squirrel-startup'))
     app.quit()
 
 app.whenReady().then(() => {
-    // --- Debug
-    // let data = fs.readFileSync('../test_data/preranked/test_result.json', 'utf8')
-    // createTableWindow(data, 'gsea_preranked')
-    // --- Debug
-
     createMainWindow()
 
     app.on('activate', () => {
@@ -471,11 +505,12 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
-        unlink(join(HOME_DIR, 'gseawrap_python_session.pkl'), (err) => {
+        unlink(join(HOME_DIR, 'gseacompass_python_session.pkl'), (err) => {
             if (err)
-                error('\n========================\nWarning: The file ' + join(HOME_DIR, 'gseawrap_python_session.pkl') +  ' \n========================\n')
+                error('\n========================\nWarning: The file ' + join(HOME_DIR, 'gseacompass_python_session.pkl couldn\'t be deleted.') + ' \n========================\n')
         })
 
         app.quit()
     }
 })
+
