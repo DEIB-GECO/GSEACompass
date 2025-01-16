@@ -20,9 +20,11 @@ HOME_DIR = os.path.expanduser("~")
 # Read arguments passed on the script call
 gene_sets_path = sys.argv[1]
 num_permutation = int(sys.argv[2])
-rnk_list_path = sys.argv[3]
-remap = sys.argv[4]
-chip_path = sys.argv[5]
+min_gene_set = int(sys.argv[3])
+max_gene_set = int(sys.argv[4])
+rnk_list_path = sys.argv[5]
+remap = sys.argv[6]
+chip_path = sys.argv[7]
 
 # If the files types are not correct, print error and exit
 if (not rnk_list_path.endswith(".rnk")):
@@ -49,6 +51,13 @@ rnk_chosen = ""
 # If the number of permutation is invalid, exit and print error
 if num_permutation <= 0:
     errorAndExit("The number of permutations must be positive.")
+
+if min_gene_set < 0:
+    errorAndExit("Min gene set size must be positive.")
+if max_gene_set < 0:
+    errorAndExit("Max gene set size must be positive.")
+if min_gene_set > max_gene_set:
+    errorAndExit("Max gene set size must be greater than min gene set size.")
 
 # If remap unselected
 if remap == "none":
@@ -79,8 +88,8 @@ try:
     res = gp.prerank(rnk=rnk_chosen,
                     gene_sets=gene_sets_path,
                     threads=4,
-                    min_size=5,
-                    max_size=1000,
+                    min_size=min_gene_set,
+                    max_size=max_gene_set,
                     permutation_num=num_permutation,
                     outdir=None,
                     seed=7)

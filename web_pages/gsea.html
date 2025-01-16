@@ -32,6 +32,26 @@
                     required />
             </div>
 
+            <!-- Number of min gene set size -->
+            <div class="mb-3">
+                <label for="min_gene_set" class="form-label" >Min gene set size</label>
+                <img src="../icons/question_16px.svg" style="cursor: pointer; padding-left: 5px;"
+                    onclick="showHelper('Gene set with less genes than this value will not be considered.')" />
+                <input type="number" value="15" name="min_gene_set" id="min_gene_set" class="form-control"
+                    required />
+            </div>
+
+            <!-- Number of max gene set size -->
+            <div class="mb-3">
+                <label for="max_gene_set" class="form-label" >Max gene set size</label>
+                <img src="../icons/question_16px.svg" style="cursor: pointer; padding-left: 5px;"
+                    onclick="showHelper('Gene set with more genes than this value will not be considered.')" />
+                <input type="number" value="500" name="max_gene_set" id="max_gene_set" class="form-control"
+                    required />
+            </div>
+
+            
+
             <!-- Expression dataset input -->
             <div class="mb-3">
                 <label for="expression_set" class="form-label">Expression dataset (.gct, .txt)</label>

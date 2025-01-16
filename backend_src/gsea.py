@@ -20,10 +20,12 @@ HOME_DIR = os.path.expanduser("~")
 # Read arguments passed on the script call
 gene_sets_path = sys.argv[1]
 num_permutation = int(sys.argv[2])
-expression_set_path = sys.argv[3]
-phenotype_labels_path = sys.argv[4]
-remap = sys.argv[5]
-chip_path = sys.argv[6]
+min_gene_set = int(sys.argv[3])
+max_gene_set = int(sys.argv[4])
+expression_set_path = sys.argv[5]
+phenotype_labels_path = sys.argv[6]
+remap = sys.argv[7]
+chip_path = sys.argv[8]
 
 # If files types are not correct, print error and exit
 if (not expression_set_path.endswith((".gct", ".res", ".pcl", ".txt"))):
@@ -53,6 +55,13 @@ expression_set_chosen = ""
 # If the number of permutation is invalid, exit and print error
 if num_permutation <= 0:
     errorAndExit("The number of permutations must be positive.")
+
+if min_gene_set < 0:
+    errorAndExit("Min gene set size must be positive.")
+if max_gene_set < 0:
+    errorAndExit("Max gene set size must be positive.")
+if min_gene_set > max_gene_set:
+    errorAndExit("Max gene set size must be greater than min gene set size.")
 
 # If remap unselected
 if remap == "none":
@@ -88,6 +97,8 @@ try:
                 permutation_num=num_permutation,
                 outdir=None,
                 method="signal_to_noise",
+                min_size=min_gene_set,
+                max_size=max_gene_set,
                 threads=4, 
                 seed=7)
 except Exception:
