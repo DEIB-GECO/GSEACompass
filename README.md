@@ -1,6 +1,8 @@
 # GSEACompass 🧭
 
-A minimalistic yet powerful app to run *GSEA*, pre-ranked *GSEA* and *ssGSEA* and, **mostly**, do post-analysis elaboration on the results!
+A minimalistic yet powerful app to run *GSEA*, pre-ranked *GSEA* and do post-analysis elaboration on the results.
+
+To know more about how to use GSEACompass and its peculiar features, check out the offical user manual: [gseacompass.gitbook.io](https://gseacompass.gitbook.io/user-manual)
 
 ## Outline
 
@@ -13,7 +15,7 @@ A minimalistic yet powerful app to run *GSEA*, pre-ranked *GSEA* and *ssGSEA* an
 
 ## Frameworks
 
-This tool is super-powered by:
+This tool is powered by:
 
 - *GSEApy* on the python backend to run genomic analyses and graphical elaborations
 - *Electron.js* on the desktop frontend
@@ -21,11 +23,13 @@ This tool is super-powered by:
 
 ## Build instructions
 
-### Download
+### Binaries
 
 Download GSEACompass source code
 
-### Run dependencies
+### Build from source
+
+Make sure, before running GSEAWrap in a development enviroment, to fulfill these dependencies.
 
 #### Rust
 
@@ -49,6 +53,9 @@ Run the following command if your OS is Fedora or similar:
 ```bash
 sudo dnf install libquadmath libquadmath-devel
 ```
+
+#### N.B. for Windows users: 
+Make sure Python and Rust are in the PATH environmental variable.
 
 #### Python libraries
 
@@ -79,6 +86,8 @@ npm install
 ```
 
 ### Build and run
+
+Before building the app you need to do download the Molecular Signatures Database from this [link](https://www.gsea-msigdb.org/gsea/msigdb/download_file.jsp?filePath=/msigdb/release/2024.1.Hs/msigdb_v2024.1.Hs.db.zip) (MSigDB) to have a fully functional enviroment. Download it, unzip it, rename it to ```msigdb.db``` and put it inside a new folder - inside the application root folder - called ```misc_resources```.
 
 To build and run the application just run the following command, make sure to be in the repository directory:
 

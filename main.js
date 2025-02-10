@@ -141,16 +141,16 @@ const createGseaWindow = () => {
     })
 
     // Message sent by the GseaWindow renderer when a GSEA analysis has been requested
-    ipcMain.on('send-data-gsea', (_event, geneSetsPath, numPermutations, expressionSet, phenotypeLabels, remapOption, chipPath) => {
+    ipcMain.on('send-data-gsea', (_event, geneSetsPath, numPermutations,minGeneSet,maxGeneSet, expressionSet, phenotypeLabels, remapOption, chipPath) => {
         let pythonProcess = null
 
         // Show the loading animation web page
         gseaWindow.loadFile(localPath('web', 'loading'))
 
         if (app.isPackaged)
-            pythonProcess = spawn(localPath('pythonBin', 'gsea'), [geneSetsPath, numPermutations, expressionSet, phenotypeLabels, remapOption, chipPath])
+            pythonProcess = spawn(localPath('pythonBin', 'gsea'), [geneSetsPath, numPermutations, minGeneSet,maxGeneSet, expressionSet, phenotypeLabels, remapOption, chipPath])
         else
-            pythonProcess = spawn('python', [localPath('python', 'gsea'), geneSetsPath, numPermutations, expressionSet, phenotypeLabels, remapOption, chipPath])
+            pythonProcess = spawn('python', [localPath('python', 'gsea'), geneSetsPath, numPermutations, minGeneSet,maxGeneSet,expressionSet, phenotypeLabels, remapOption, chipPath])
 
         let jsonContent = ''
 
@@ -197,16 +197,16 @@ const createGseaPrerankedWindow = () => {
     })
 
     // Message sent by the GseaPrerankedWindow renderer when a preranked analysis has been requested
-    ipcMain.on('send-data-preranked', (_event, geneSetsPath, numPermutations, rankedListPath, remapOption, chipPath) => {
+    ipcMain.on('send-data-preranked', (_event, geneSetsPath, numPermutations,minGeneSet,maxGeneSet, rankedListPath, remapOption, chipPath) => {
         let pythonProcess = null
 
         // Show the loading animation web page
         gseaPrerankedWindow.loadFile(localPath('web', 'loading'))
 
         if (app.isPackaged)
-            pythonProcess = spawn(localPath('pythonBin', 'gsea_preranked'), [geneSetsPath, numPermutations, rankedListPath, remapOption, chipPath])
+            pythonProcess = spawn(localPath('pythonBin', 'gsea_preranked'), [geneSetsPath, numPermutations,minGeneSet,maxGeneSet, rankedListPath, remapOption, chipPath])
         else
-            pythonProcess = spawn('python', [localPath('python', 'gsea_preranked'), geneSetsPath, numPermutations, rankedListPath, remapOption, chipPath])
+            pythonProcess = spawn('python', [localPath('python', 'gsea_preranked'), geneSetsPath, numPermutations,minGeneSet,maxGeneSet, rankedListPath, remapOption, chipPath])
 
         let jsonContent = ''
 
