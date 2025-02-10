@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>GSEACompass</title>
+
+    <script src="../renderer_src/upload_msigdb_renderer.js" defer></script>
+
+    <link rel="stylesheet" type="text/css" href="../dependencies/datatables/datatables.min.css" />
+    <style>
+        body {
+            margin: 15px;
+        }
+
+        .card {
+            width: 18rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h3 class="display-1 m-3 text-center">GSEA<b>Compass</b> 🧭</h3>
+
+    <p>
+        The Molecular signature database (MSigDB) is needed to run GSEACompass, therefore please download it from the Broad 
+        Institute website (<a href="https://www.gsea-msigdb.org/gsea/downloads.jsp">link</a>, in SQLite format), unzip it 
+        and upload the obtained file here.
+    </p>
+
+    <div class="container mt-3">
+        <form class="row">
+            <div class="mb-3">
+                <label for="msigdb" class="form-label">Molecular signature database (.db)</label>
+                <input type="file" accept=".db" name="msigdb" id="msigdb" class="form-control" required />
+            </div>
+            <div class="col-12 mb-3">
+                <button type="button" id="submit" class="btn btn-primary">Submit</button>
+            </div>
+        </form>
+    </div>
+</body>
+
+</html>

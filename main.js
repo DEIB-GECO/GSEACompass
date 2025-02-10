@@ -1,6 +1,6 @@
-import { app, BrowserWindow, ipcMain, dialog, Menu } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, Menu, shell } from 'electron'
 import { spawn } from 'child_process'
-import { writeFileSync, existsSync, unlink } from 'fs'
+import { writeFileSync, existsSync, unlink, copyFile, mkdirSync } from 'fs'
 import { join } from 'node:path'
 import logPkg from 'electron-log/main.js'
 const { error, transports } = logPkg
@@ -470,6 +470,48 @@ const createGeneSetInfoWindow = (geneSetInfo) => {
     geneSetInfoWindow.loadFile(localPath('web', 'gene_set_info'))
 }
 
+// Function that creates a window to upload the MSigDB 
+const createUploadMsigdbWindow = () => {
+    const uploadMsigdbWindow = new BrowserWindow({
+        width: 800,
+        height: 350,
+        icon: localPath('icon', 'compass_1024px.png'),
+        webPreferences: {
+            preload: localPath('preload', 'upload_msigdb_preload'),
+        }
+    })
+
+    uploadMsigdbWindow.webContents.on('will-navigate', (e, url) => {
+        e.preventDefault()
+        shell.openExternal(url)
+    })
+
+    // When a MsigDB file is received
+    ipcMain.on('send-msigdb', (_event, msigdbPath) => {
+        // Create the 'misc_resources' directory inside the app root directory, if it doesn't already exist
+        if (!existsSync(localPath('resource', '')))
+            mkdirSync(localPath('resource', ''))
+
+        // Copy the MsigdDB file inside the app 'misc_resources' directory
+        copyFile(msigdbPath, localPath('resource', 'msigdb.db'), (err) => {
+            if (err) {
+                error('\n========================\nError: The MsgiDB couldn\'t be copied in the GSEACompss directory \n========================\n')
+                dialog.showMessageBox({
+                    message: 'The provided MsgiDB file couldn\'t be copied in the GSEACompss directory',
+                    type: 'error',
+                    title: 'MsigDB upload failure'
+                })
+            }
+            else {
+                uploadMsigdbWindow.close()
+                createMainWindow()
+            }
+        })
+    })
+
+    uploadMsigdbWindow.loadFile(localPath('web', 'upload_msigdb'))
+}
+
 // Set up the app
 const menuTemplate = [
     {
@@ -495,7 +537,11 @@ if (require('electron-squirrel-startup'))
     app.quit()
 
 app.whenReady().then(() => {
-    createMainWindow()
+    // If the MSigDB hasn' been uploaded
+    if (existsSync(localPath('resource', 'msigdb.db')))
+        createMainWindow()
+    else
+        createUploadMsigdbWindow()
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0)
