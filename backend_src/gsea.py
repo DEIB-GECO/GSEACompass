@@ -28,10 +28,10 @@ remap = sys.argv[7]
 chip_path = sys.argv[8]
 
 # If files types are not correct, print error and exit
-if (not expression_set_path.endswith((".gct", ".res", ".pcl", ".txt"))):
-    errorAndExit("The expression set file (.gct, .res, .pcl, .txt) is not of the right type.")
-if (not gene_sets_path.endswith((".gmt", ".gmx"))):
-    errorAndExit("The gene set file (.gmt, .gmx) is not of the right type.")
+if (not expression_set_path.endswith((".gct", ".txt"))):
+    errorAndExit("The expression set file (.gct, .txt) is not of the right type.")
+if (not gene_sets_path.endswith(".gmt")):
+    errorAndExit("The gene set file (.gmt) is not of the right type.")
 if (not phenotype_labels_path.endswith(".cls")):
     errorAndExit("The phenotype labels file (.cls) is not of the right type.")
 

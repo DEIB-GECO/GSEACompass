@@ -18,14 +18,14 @@
             <!-- Gene sets input -->
             <div class="mb-3">
                 <label for="gene_sets" class="form-label">Gene sets database (.gmt)</label>
-                <img src="../icons/question_16px.svg" style="cursor: pointer; padding-left: 5px;" 
+                <img src="../icons/question_16px.svg" style="cursor: pointer; padding-left: 5px;"
                     onclick="showHelper('A gene sets file defines one or more gene sets. For each gene set, the file contains the gene set name and the list of genes in that gene set. A gene sets file is a tab-delimited text file in gmt format.')" />
                 <input type="file" accept=".gmt" name="gene_sets" id="gene_sets" class="form-control" required />
             </div>
 
             <!-- Number of permutations input -->
             <div class="mb-3">
-                <label for="num_permutations" class="form-label" >Number of permutations</label>
+                <label for="num_permutations" class="form-label">Number of permutations</label>
                 <img src="../icons/question_16px.svg" style="cursor: pointer; padding-left: 5px;"
                     onclick="showHelper('It\'s the number permutations to perform in assessing the statistical significance of the enrichment score. It is best to start with a small number, such as 10. After the analysis completes successfully, run it again with a full set of permutations. The GSEA team recommends 1000 permutations.')" />
                 <input type="number" value="1000" name="num_permutations" id="num_permutations" class="form-control"
@@ -34,30 +34,27 @@
 
             <!-- Number of min gene set size -->
             <div class="mb-3">
-                <label for="min_gene_set" class="form-label" >Min gene set size</label>
+                <label for="min_gene_set" class="form-label">Min gene set size</label>
                 <img src="../icons/question_16px.svg" style="cursor: pointer; padding-left: 5px;"
                     onclick="showHelper('Gene set with less genes than this value will not be considered.')" />
-                <input type="number" value="15" name="min_gene_set" id="min_gene_set" class="form-control"
-                    required />
+                <input type="number" value="15" name="min_gene_set" id="min_gene_set" class="form-control" required />
             </div>
 
             <!-- Number of max gene set size -->
             <div class="mb-3">
-                <label for="max_gene_set" class="form-label" >Max gene set size</label>
+                <label for="max_gene_set" class="form-label">Max gene set size</label>
                 <img src="../icons/question_16px.svg" style="cursor: pointer; padding-left: 5px;"
                     onclick="showHelper('Gene set with more genes than this value will not be considered.')" />
-                <input type="number" value="500" name="max_gene_set" id="max_gene_set" class="form-control"
-                    required />
+                <input type="number" value="500" name="max_gene_set" id="max_gene_set" class="form-control" required />
             </div>
-
-            
 
             <!-- Expression dataset input -->
             <div class="mb-3">
                 <label for="expression_set" class="form-label">Expression dataset (.gct, .txt)</label>
                 <img src="../icons/question_16px.svg" style="cursor: pointer; padding-left: 5px;"
                     onclick="showHelper('An expression dataset file contains features (genes or probes), samples, and an expression value for each feature in each sample. It is a tab-delimited text file in gct or txt format.')" />
-                <input type="file" accept=".gct, .txt" name="expression_set" id="expression_set" class="form-control" required />
+                <input type="file" accept=".gct, .txt" name="expression_set" id="expression_set" class="form-control"
+                    required />
             </div>
 
             <!-- Phenotype labels -->
@@ -65,7 +62,8 @@
                 <label for="phenotype_labels" class="form-label">Phenotype labels (.cls)</label>
                 <img src="../icons/question_16px.svg" style="cursor: pointer; padding-left: 5px;"
                     onclick="showHelper('A phenotype label file, also known as a class file or template file, defines phenotype labels and assigns those labels to the samples in your expression dataset. A phenotype label file is a tab-delimited text file in cls format.')" />
-                <input type="file" accept=".cls" name="phenotype_labels" id="phenotype_labels" class="form-control" required />
+                <input type="file" accept=".cls" name="phenotype_labels" id="phenotype_labels" class="form-control"
+                    required />
             </div>
 
             <!-- Remap input -->
@@ -81,8 +79,7 @@
                         <label for="remap" class="form-check-label">Remap</label>
                     </div>
                     <div class="form-check">
-                        <input type="radio" id="none" name="remap" value="none" checked
-                            class="form-check-input" />
+                        <input type="radio" id="none" name="remap" value="none" checked class="form-check-input" />
                         <label for="none" class="form-check-label">Do nothing</label>
                     </div>
                 </fieldset>
@@ -95,7 +92,7 @@
                     onclick="showHelper('A chip annotations file lists each identifier used in a platform and its matching gene symbol in another platform. A chip annotations file is a tab-delimited text file in chip format.')" />
                 <input type="file" accept=".chip" name="chip" id="chip" class="form-control" />
             </div>
-            
+
             <div class="col-12 mb-3">
                 <button type="button" id="submit" class="btn btn-primary">Submit</button>
             </div>

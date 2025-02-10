@@ -29,8 +29,8 @@ chip_path = sys.argv[7]
 # If the files types are not correct, print error and exit
 if (not rnk_list_path.endswith(".rnk")):
     errorAndExit("The ranked list file (.rnk) is not of the right type.")
-if (not gene_sets_path.endswith((".gmt", ".gmx"))):
-    errorAndExit("The gene set file (.gmt, .gmx) is not of the right type.")
+if (not gene_sets_path.endswith(".gmt")):
+    errorAndExit("The gene set file (.gmt) is not of the right type.")
    
 # Try to parse the ranked list 
 try:
