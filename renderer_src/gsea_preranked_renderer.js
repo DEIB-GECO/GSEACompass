@@ -15,7 +15,7 @@ submitBtn.addEventListener("click", (event) => {
     const remapOption = document.querySelector('[name="remap"]:checked').value
     const chipPath = chipObj.files[0]
 
-    window.electronAPI.sendDataPreranked(geneSetsPath, numPermutations,minGeneSet,maxGeneSet, rankedListPath, remapOption, chipPath)
+    window.electronAPI.sendDataPreranked(geneSetsPath, numPermutations, minGeneSet, maxGeneSet, rankedListPath, remapOption, chipPath)
 })
 
 const showHelper = (helpString) => window.electronAPI.showHelperPopup(helpString)

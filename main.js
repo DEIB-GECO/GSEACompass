@@ -132,8 +132,8 @@ const createMainWindow = () => {
 // Function that creates and handles the GSEA analysis window
 const createGseaWindow = () => {
     const gseaWindow = new BrowserWindow({
-        width: 800,
-        height: 670,
+        width: 780,
+        height: 830,
         icon: localPath('icon', 'compass_1024px.png'),
         webPreferences: {
             preload: localPath('preload', 'gsea_preload')
@@ -148,9 +148,9 @@ const createGseaWindow = () => {
         gseaWindow.loadFile(localPath('web', 'loading'))
 
         if (app.isPackaged)
-            pythonProcess = spawn(localPath('pythonBin', 'gsea'), [geneSetsPath, numPermutations, minGeneSet,maxGeneSet, expressionSet, phenotypeLabels, remapOption, chipPath])
+            pythonProcess = spawn(localPath('pythonBin', 'gsea'), [geneSetsPath, numPermutations, minGeneSet, maxGeneSet, expressionSet, phenotypeLabels, remapOption, chipPath])
         else
-            pythonProcess = spawn('python', [localPath('python', 'gsea'), geneSetsPath, numPermutations, minGeneSet,maxGeneSet,expressionSet, phenotypeLabels, remapOption, chipPath])
+            pythonProcess = spawn('python', [localPath('python', 'gsea'), geneSetsPath, numPermutations, minGeneSet, maxGeneSet,expressionSet, phenotypeLabels, remapOption, chipPath])
 
         let jsonContent = ''
 
@@ -188,8 +188,8 @@ const createGseaWindow = () => {
 // Function that creates and handles the preranked analysis window
 const createGseaPrerankedWindow = () => {
     const gseaPrerankedWindow = new BrowserWindow({
-        width: 800,
-        height: 600,
+        width: 780,
+        height: 750,
         icon: localPath('icon', 'compass_1024px.png'),
         webPreferences: {
             preload: localPath('preload', 'gsea_preranked_preload')
@@ -197,16 +197,16 @@ const createGseaPrerankedWindow = () => {
     })
 
     // Message sent by the GseaPrerankedWindow renderer when a preranked analysis has been requested
-    ipcMain.on('send-data-preranked', (_event, geneSetsPath, numPermutations,minGeneSet,maxGeneSet, rankedListPath, remapOption, chipPath) => {
+    ipcMain.on('send-data-preranked', (_event, geneSetsPath, numPermutations, minGeneSet, maxGeneSet, rankedListPath, remapOption, chipPath) => {
         let pythonProcess = null
 
         // Show the loading animation web page
         gseaPrerankedWindow.loadFile(localPath('web', 'loading'))
 
         if (app.isPackaged)
-            pythonProcess = spawn(localPath('pythonBin', 'gsea_preranked'), [geneSetsPath, numPermutations,minGeneSet,maxGeneSet, rankedListPath, remapOption, chipPath])
+            pythonProcess = spawn(localPath('pythonBin', 'gsea_preranked'), [geneSetsPath, numPermutations, minGeneSet, maxGeneSet, rankedListPath, remapOption, chipPath])
         else
-            pythonProcess = spawn('python', [localPath('python', 'gsea_preranked'), geneSetsPath, numPermutations,minGeneSet,maxGeneSet, rankedListPath, remapOption, chipPath])
+            pythonProcess = spawn('python', [localPath('python', 'gsea_preranked'), geneSetsPath, numPermutations, minGeneSet, maxGeneSet, rankedListPath, remapOption, chipPath])
 
         let jsonContent = ''
 

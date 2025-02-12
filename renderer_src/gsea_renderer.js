@@ -17,7 +17,7 @@ submitBtn.addEventListener('click', (_event) => {
     const remapOption = document.querySelector('[name="remap"]:checked').value
     const chipPath = chipObj.files[0]
 
-    window.electronAPI.sendDataGsea(geneSetsPath, numPermutations, expressionSet, phenotypeLabels, remapOption, chipPath)
+    window.electronAPI.sendDataGsea(geneSetsPath, numPermutations, minGeneSet, maxGeneSet, expressionSet, phenotypeLabels, remapOption, chipPath)
 })
 
 const showHelper = (helpString) => window.electronAPI.showHelperPopup(helpString)
