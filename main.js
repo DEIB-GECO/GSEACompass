@@ -50,12 +50,15 @@ const popupOnProcessFail = (process) => {
                 title: 'Failure'
             })
 
-            error('\n========================\nError description: ' + stdoutContent + '\nStderr trace:\n' + stderrContent + '\n========================\n')
+            error(`\n========================\n
+                   Error description: ${stdoutContent}\n
+                   Stderr trace:\n ${stderrContent}
+                   \n========================\n`)
         }
     })
 }
 
-// Utility function that return a local path
+// Utility function that returns a local path
 const localPath = (type, file) => {
     let dir = ''
     let ext = ''
@@ -97,6 +100,7 @@ const localPath = (type, file) => {
     return locPath
 }
 
+// Utility function that spawns a python process either using 
 // Setup the logger
 // It will be used just for errors and it must save the logs in the local directory
 const LOG_FILE_NAME = 'gseacompass_error_' + currentDate
@@ -116,15 +120,17 @@ const createMainWindow = () => {
         }
     })
 
+    ipcMain.removeAllListeners('open-gsea-preranked')
     ipcMain.on('open-gsea-preranked', () => {
         createGseaPrerankedWindow()
         mainWindow.close()
     })
-
+    ipcMain.removeAllListeners('open-gsea')
     ipcMain.on('open-gsea', () => {
         createGseaWindow()
         mainWindow.close()
     })
+
 
     mainWindow.loadFile(localPath('web', 'main'))
 }
@@ -141,7 +147,8 @@ const createGseaWindow = () => {
     })
 
     // Message sent by the GseaWindow renderer when a GSEA analysis has been requested
-    ipcMain.on('send-data-gsea', (_event, geneSetsPath, numPermutations,minGeneSet,maxGeneSet, expressionSet, phenotypeLabels, remapOption, chipPath) => {
+    ipcMain.removeAllListeners('send-data-gsea')
+    ipcMain.on('send-data-gsea', (_event, geneSetsPath, numPermutations, minGeneSet, maxGeneSet, expressionSet, phenotypeLabels, remapOption, chipPath) => {
         let pythonProcess = null
 
         // Show the loading animation web page
@@ -173,7 +180,15 @@ const createGseaWindow = () => {
         popupOnProcessFail(pythonProcess)
     })
 
+    // Go back to the home window
+    ipcMain.removeAllListeners('go-back-to-home')
+    ipcMain.on('go-back-to-home', () => {
+        createMainWindow()
+        gseaWindow.close()
+    })
+
     // Request from the GseaWindow renderer to show an helper popup
+    ipcMain.removeAllListeners('show-helper-popup')
     ipcMain.on('show-helper-popup', (_event, helpString) => {
         dialog.showMessageBox({
             message: helpString,
@@ -197,6 +212,7 @@ const createGseaPrerankedWindow = () => {
     })
 
     // Message sent by the GseaPrerankedWindow renderer when a preranked analysis has been requested
+    ipcMain.removeAllListeners('send-data-preranked')
     ipcMain.on('send-data-preranked', (_event, geneSetsPath, numPermutations, minGeneSet, maxGeneSet, rankedListPath, remapOption, chipPath) => {
         let pythonProcess = null
 
@@ -230,7 +246,15 @@ const createGseaPrerankedWindow = () => {
         popupOnProcessFail(pythonProcess)
     })
 
+    // Go back to the home window
+    ipcMain.removeAllListeners('go-back-to-home')
+    ipcMain.on('go-back-to-home', () => {
+        createMainWindow()
+        gseaPrerankedWindow.close()
+    })
+
     // Request from the GseaPrerankedWindow renderer to show an helper popup
+    ipcMain.removeAllListeners('show-helper-popup')
     ipcMain.on('show-helper-popup', (_event, helpString) => {
         dialog.showMessageBox({
             message: helpString,
@@ -253,10 +277,28 @@ const createTableWindow = (jsonRawData, analysisType) => {
         }
     })
 
+    // Go back to the home window
+    ipcMain.removeAllListeners('go-back-to-home')
+    ipcMain.on('go-back-to-home', () => {
+        // Delete the session file if it exists, since the user is going back to the home page and any previous session should be cleared
+        if (existsSync(join(HOME_DIR, 'gseacompass_python_session.pkl'))) {
+            unlink(join(HOME_DIR, 'gseacompass_python_session.pkl'), (err) => {
+                if (err)
+                    error(`\n========================\n
+                             Warning: The file ${join(HOME_DIR, 'gseacompass_python_session.pkl')} exists but couldn't be deleted. 
+                           \n========================\n`)
+            })
+        }
+
+        createMainWindow()
+        tableWindow.close()
+    })
+
     tableWindow.webContents.on('did-finish-load', () => {
         tableWindow.webContents.send('send-analysis-data', jsonRawData, analysisType)
     })
 
+    ipcMain.removeAllListeners('request-enrichment-plot')
     ipcMain.on('request-enrichment-plot', (_event, selectedTerms, sizeX, sizeY, measurementUnit, createOrUpdate) => {
         let pythonProcess = null
 
@@ -278,6 +320,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         popupOnProcessFail(pythonProcess)
     })
 
+    ipcMain.removeAllListeners('request-dotplot')
     ipcMain.on('request-dotplot', (_event, selectedColumnAndTerms, sizeX, sizeY, measurementUnit, createOrUpdate) => {
         // Create a tmp file
         const tmpFile = fileSync();
@@ -312,6 +355,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         popupOnProcessFail(pythonProcess)
     })
 
+    ipcMain.removeAllListeners('request-heatmap')
     ipcMain.on('request-heatmap', (_event, selectedRow, sizeX, sizeY, measurementUnit, createOrUpdate) => {
         let pythonProcess = null
 
@@ -333,6 +377,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         popupOnProcessFail(pythonProcess)
     })
 
+    ipcMain.removeAllListeners('request-iou-plot')
     ipcMain.on('request-iou-plot', (_event, selectedTerms, sizeX, sizeY, measurementUnit, createOrUpdate) => {
         let pythonProcess = null
 
@@ -354,6 +399,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         popupOnProcessFail(pythonProcess)
     })
 
+    ipcMain.removeAllListeners('request-wordcloud')
     ipcMain.on('request-wordcloud', (_event, selectedColumn, sizeX, sizeY, measurementUnit, createOrUpdate) => {
         // Create a tmp file
         const tmpFile = fileSync();
@@ -388,6 +434,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         popupOnProcessFail(pythonProcess)
     })
 
+    ipcMain.removeAllListeners('request-gene-set-info')
     ipcMain.on('request-gene-set-info', (_event, selectedTerm) => {
         if (!existsSync(localPath('resource', 'msigdb.db'))) {
             dialog.showMessageBox({
@@ -444,7 +491,7 @@ const createPlotWindow = (customWidth, customHeight, plotType, plotArg) => {
         plotExtensions.forEach(ext => {
             unlink(PLOT_PATH + ext, (err) => {
                 if (err)
-                    error('Temporary plot file ' + PLOT_PATH + ' cannot be deleted.')
+                    error(`Temporary plot file ${PLOT_PATH + ext} cannot be deleted.`)
             })
         })
     })
@@ -487,7 +534,9 @@ const createUploadMsigdbWindow = () => {
     })
 
     // When a MsigDB file is received
+    ipcMain.removeAllListeners('send-msigdb')
     ipcMain.on('send-msigdb', (_event, msigdbPath) => {
+
         // Create the 'misc_resources' directory inside the app root directory, if it doesn't already exist
         if (!existsSync(localPath('resource', '')))
             mkdirSync(localPath('resource', ''))
@@ -495,7 +544,11 @@ const createUploadMsigdbWindow = () => {
         // Copy the MsigdDB file inside the app 'misc_resources' directory
         copyFile(msigdbPath, localPath('resource', 'msigdb.db'), (err) => {
             if (err) {
-                error('\n========================\nError: The MsgiDB couldn\'t be copied in the GSEACompss directory \n========================\n')
+                error(`\n========================\n
+                         Error: The MsgiDB couldn't be copied in the GSEACompss directory. \n
+                         Error description: ${err}
+                       \n========================\n`)
+
                 dialog.showMessageBox({
                     message: 'The provided MsgiDB file couldn\'t be copied in the GSEACompss directory',
                     type: 'error',
@@ -510,9 +563,11 @@ const createUploadMsigdbWindow = () => {
     })
 
     uploadMsigdbWindow.loadFile(localPath('web', 'upload_msigdb'))
+
+
 }
 
-// Set up the app
+// Define and apply the menu template
 const menuTemplate = [
     {
         label: 'About',
@@ -530,6 +585,8 @@ const menuTemplate = [
     }
 ]
 Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate))
+
+
 app.disableHardwareAcceleration()
 
 // Needed for Windows Squirrel package
@@ -537,7 +594,7 @@ if (require('electron-squirrel-startup'))
     app.quit()
 
 app.whenReady().then(() => {
-    // If the MSigDB hasn' been uploaded
+    // If the MSigDB exists, show the main window, otherwise show the upload MSigDB window
     if (existsSync(localPath('resource', 'msigdb.db')))
         createMainWindow()
     else
@@ -550,11 +607,17 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
+    // Delete the python session file, if it exists
+    // Only in non-macOS enviroments, since in macOS it's common for apps to stay active even without windows
     if (process.platform !== 'darwin') {
-        unlink(join(HOME_DIR, 'gseacompass_python_session.pkl'), (err) => {
-            if (err)
-                error('\n========================\nWarning: The file ' + join(HOME_DIR, 'gseacompass_python_session.pkl couldn\'t be deleted.') + ' \n========================\n')
-        })
+        if (existsSync(join(HOME_DIR, 'gseacompass_python_session.pkl'))) {
+            unlink(join(HOME_DIR, 'gseacompass_python_session.pkl'), (err) => {
+                if (err)
+                    error(`\n========================\n
+                            Warning: The file ${join(HOME_DIR, 'gseacompass_python_session.pkl')} exists but couldn't be deleted. 
+                           \n========================\n`)
+            })
+        }
 
         app.quit()
     }

@@ -5,6 +5,7 @@ const maxGeneSetObj = document.querySelector('#max_gene_set')
 const rankedListObj = document.querySelector("#ranked_list")
 const chipObj = document.querySelector("#chip")
 const submitBtn = document.querySelector("#submit")
+const backBtn = document.querySelector("#back")
 
 submitBtn.addEventListener("click", (event) => {
     const geneSetsPath = geneSetsObj.files[0]
@@ -16,6 +17,10 @@ submitBtn.addEventListener("click", (event) => {
     const chipPath = chipObj.files[0]
 
     window.electronAPI.sendDataPreranked(geneSetsPath, numPermutations, minGeneSet, maxGeneSet, rankedListPath, remapOption, chipPath)
+})
+
+backBtn.addEventListener("click", (event) => {
+    window.electronAPI.goBackToHome()
 })
 
 const showHelper = (helpString) => window.electronAPI.showHelperPopup(helpString)

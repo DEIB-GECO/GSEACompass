@@ -6,6 +6,7 @@ const expressionSetObj = document.querySelector('#expression_set')
 const phenotypeLabelsObj = document.querySelector('#phenotype_labels')
 const chipObj = document.querySelector('#chip')
 const submitBtn = document.querySelector('#submit')
+const backBtn = document.querySelector('#back')
 
 submitBtn.addEventListener('click', (_event) => {
     const geneSetsPath = geneSetsObj.files[0]
@@ -18,6 +19,10 @@ submitBtn.addEventListener('click', (_event) => {
     const chipPath = chipObj.files[0]
 
     window.electronAPI.sendDataGsea(geneSetsPath, numPermutations, minGeneSet, maxGeneSet, expressionSet, phenotypeLabels, remapOption, chipPath)
+})
+
+backBtn.addEventListener('click', (_event) => {
+    window.electronAPI.goBackToHome()
 })
 
 const showHelper = (helpString) => window.electronAPI.showHelperPopup(helpString)

@@ -1,3 +1,9 @@
+const backBtn = document.querySelector('#back')
+
+backBtn.addEventListener('click', () => {
+    window.electronAPI.goBackToHome()
+})
+
 // Function applied to each column to verify whether it should be exported or not
 // Returns true if the current column should be exported, otherwise false
 let exportColSelector = (idx, _data, _node) => {
