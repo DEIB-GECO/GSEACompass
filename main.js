@@ -101,6 +101,14 @@ const localPath = (type, file) => {
 }
 
 // Utility function that spawns a python process either using 
+// packaged executables or the local python environment, based on the app environment
+const spawnPythonProcess = (scriptName, args) => {
+    if (app.isPackaged)
+        return spawn(localPath('pythonBin', scriptName), args)
+    else
+        return spawn('python', [localPath('python', scriptName), ...args])
+}
+
 // Setup the logger
 // It will be used just for errors and it must save the logs in the local directory
 const LOG_FILE_NAME = 'gseacompass_error_' + currentDate
@@ -154,10 +162,7 @@ const createGseaWindow = () => {
         // Show the loading animation web page
         gseaWindow.loadFile(localPath('web', 'loading'))
 
-        if (app.isPackaged)
-            pythonProcess = spawn(localPath('pythonBin', 'gsea'), [geneSetsPath, numPermutations, minGeneSet, maxGeneSet, expressionSet, phenotypeLabels, remapOption, chipPath])
-        else
-            pythonProcess = spawn('python', [localPath('python', 'gsea'), geneSetsPath, numPermutations, minGeneSet, maxGeneSet,expressionSet, phenotypeLabels, remapOption, chipPath])
+        pythonProcess = spawnPythonProcess('gsea', [geneSetsPath, numPermutations, minGeneSet, maxGeneSet, expressionSet, phenotypeLabels, remapOption, chipPath])
 
         let jsonContent = ''
 
@@ -219,10 +224,7 @@ const createGseaPrerankedWindow = () => {
         // Show the loading animation web page
         gseaPrerankedWindow.loadFile(localPath('web', 'loading'))
 
-        if (app.isPackaged)
-            pythonProcess = spawn(localPath('pythonBin', 'gsea_preranked'), [geneSetsPath, numPermutations, minGeneSet, maxGeneSet, rankedListPath, remapOption, chipPath])
-        else
-            pythonProcess = spawn('python', [localPath('python', 'gsea_preranked'), geneSetsPath, numPermutations, minGeneSet, maxGeneSet, rankedListPath, remapOption, chipPath])
+        pythonProcess = spawnPythonProcess('gsea_preranked', [geneSetsPath, numPermutations, minGeneSet, maxGeneSet, rankedListPath, remapOption, chipPath])
 
         let jsonContent = ''
 
@@ -302,10 +304,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
     ipcMain.on('request-enrichment-plot', (_event, selectedTerms, sizeX, sizeY, measurementUnit, createOrUpdate) => {
         let pythonProcess = null
 
-        if (app.isPackaged)
-            pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['enrichment-plot', selectedTerms, sizeX, sizeY, measurementUnit])
-        else
-            pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'enrichment-plot', selectedTerms, sizeX, sizeY, measurementUnit])
+        pythonProcess = spawnPythonProcess('gsea_plot', ['enrichment-plot', selectedTerms, sizeX, sizeY, measurementUnit])
 
         pythonProcess.on('exit', (code) => {
             if (code == 0) {
@@ -334,10 +333,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
 
         let pythonProcess = null
 
-        if (app.isPackaged)
-            pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['dotplot', tmpFile.name, sizeX, sizeY, measurementUnit])
-        else
-            pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'dotplot', tmpFile.name, sizeX, sizeY, measurementUnit])
+        pythonProcess = spawnPythonProcess('gsea_plot', ['dotplot', tmpFile.name, sizeX, sizeY, measurementUnit])
 
         pythonProcess.on('exit', (code) => {
             // Remove the tmp file
@@ -359,10 +355,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
     ipcMain.on('request-heatmap', (_event, selectedRow, sizeX, sizeY, measurementUnit, createOrUpdate) => {
         let pythonProcess = null
 
-        if (app.isPackaged)
-            pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['heatmap', selectedRow, sizeX, sizeY, measurementUnit])
-        else
-            pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'heatmap', selectedRow, sizeX, sizeY, measurementUnit])
+        pythonProcess = spawnPythonProcess('gsea_plot', ['heatmap', selectedRow, sizeX, sizeY, measurementUnit])
 
         pythonProcess.on('exit', (code) => {
             if (code == 0) {
@@ -381,10 +374,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
     ipcMain.on('request-iou-plot', (_event, selectedTerms, sizeX, sizeY, measurementUnit, createOrUpdate) => {
         let pythonProcess = null
 
-        if (app.isPackaged)
-            pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['intersection-over-union', selectedTerms, globalThis.chosenGeneSetsPath, sizeX, sizeY, measurementUnit])
-        else
-            pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'intersection-over-union', selectedTerms, globalThis.chosenGeneSetsPath, sizeX, sizeY, measurementUnit])
+        pythonProcess = spawnPythonProcess('gsea_plot', ['intersection-over-union', selectedTerms, globalThis.chosenGeneSetsPath, sizeX, sizeY, measurementUnit])
 
         pythonProcess.on('exit', (code) => {
             if (code == 0) {
@@ -413,10 +403,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
 
         let pythonProcess = null
 
-        if (app.isPackaged)
-            pythonProcess = spawn(localPath('pythonBin', 'gsea_plot'), ['wordcloud', tmpFile.name, sizeX, sizeY, measurementUnit])
-        else
-            pythonProcess = spawn('python', [localPath('python', 'gsea_plot'), 'wordcloud', tmpFile.name, sizeX, sizeY, measurementUnit])
+        pythonProcess = spawnPythonProcess('gsea_plot', ['wordcloud', tmpFile.name, sizeX, sizeY, measurementUnit])
 
         pythonProcess.on('exit', (code) => {
             // Remove the tmp file
@@ -445,10 +432,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         } else {
             let pythonProcess = null
 
-            if (app.isPackaged)
-                pythonProcess = spawn(localPath('pythonBin', 'gene_set_info'), [selectedTerm, localPath('resource', 'msigdb.db')])
-            else
-                pythonProcess = spawn('python', [localPath('python', 'gene_set_info'), selectedTerm, localPath('resource', 'msigdb.db')])
+            pythonProcess = spawnPythonProcess('gene_set_info', [selectedTerm, localPath('resource', 'msigdb.db')])
 
             let jsonContent = ''
 
