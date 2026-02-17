@@ -554,18 +554,63 @@ const createUploadMsigdbWindow = () => {
 // Define and apply the menu template
 const menuTemplate = [
     {
-        label: 'About',
+        label: 'Options',
         submenu: [{
-            label: 'Third-party licenses',
+            label: 'Update MSigDB from local',
             click() {
-                const licenseWindow = new BrowserWindow({
-                    width: 800,
-                    height: 600,
-                    icon: localPath('icon', 'compass_1024px.png')
+                // Delete the current MSigDB file
+                unlink(localPath('resource', 'msigdb.db'), (err) => {
+                    if (err)
+                        error(`\n========================\n
+                                 Warning: The file ${localPath('resource', 'msigdb.db')} couldn't be deleted. 
+                               \n========================\n`)
                 })
-                licenseWindow.loadFile('NOTICE.md')
+
+                // Close all windows except the upload MSigDB one
+                BrowserWindow.getAllWindows().forEach(win => {win.close()})
+
+                // Show the upload MSigDB window
+                createUploadMsigdbWindow()
             }
         }]
+    },
+    {
+        label: 'About',
+        submenu: [
+            {
+                label: 'GitHub repository',
+                click() {
+                    shell.openExternal('https://github.com/DEIB-GECO/GSEACompass')
+                }
+            },
+            {
+                label: 'Third-party licenses',
+                click() {
+                    const licenseWindow = new BrowserWindow({
+                        width: 800,
+                        height: 600,
+                        icon: localPath('icon', 'compass_1024px.png')
+                    })
+                    licenseWindow.loadFile('NOTICE.md')
+                }
+            }]
+    },
+    {
+        label: 'Help',
+        submenu: [
+            {
+                label: 'Documentation',
+                click() {
+                    shell.openExternal('https://gseacompass.gitbook.io/user-manual/')
+                }
+            },
+            {
+                label: 'Report an issue',
+                click() {
+                    shell.openExternal('https://github.com/DEIB-GECO/GSEACompass/pulls')
+                }
+            }
+        ]
     }
 ]
 Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate))
