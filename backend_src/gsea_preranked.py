@@ -61,7 +61,24 @@ if min_gene_set > max_gene_set:
 
 # If remap unselected
 if remap == "none":
-    rnk_chosen = rnk_list
+    # Verify that the gene sets and the ranked list have at least 10 genes in common, otherwise exit and print error
+    gene_set_genes = set()
+    with open(gene_sets_path, "r") as f:
+        for line in f:
+            parts = line.strip().split("\t")
+            gene_set_genes.update(parts[2:])  # Skip the first two columns (gene set name and link)
+    rnk_list_genes = set(rnk_list.index)
+    common_genes = gene_set_genes.intersection(rnk_list_genes)
+    
+    if len(common_genes) < 10:
+        errorAndExit("The gene set file has less than 10 genes in common with the ranked list file, " \
+                    "the genes in those two files probably have different platform annotations.\n" \
+                    "If you want to use a remapping, please select the appropriate chip platform file.\n\n" \
+                    f"Some of the mismatching genes in the ranked list: {', '.join(list(rnk_list_genes.difference(gene_set_genes))[:2])}\n" \
+                    f"Some of the mismatching genes in the gene set file: {', '.join(list(gene_set_genes.difference(rnk_list_genes))[:2])}")
+    else:
+        rnk_chosen = rnk_list
+        
 # If remap selected
 else:
     # If chip file not selected (left blank), exit and print error
@@ -83,18 +100,34 @@ else:
         
     # Convert the ranked list genes in the chip platform notation
     rnk_chosen = rnk_list.join(chip)[["Gene Symbol", 1]].reset_index(drop=True).dropna()
+    
+    # Verify that the gene sets and the ranked list have at least 10 genes in common, otherwise exit and print error
+    gene_set_genes = set()
+    with open(gene_sets_path, "r") as f:
+        for line in f:
+            parts = line.strip().split("\t")
+            gene_set_genes.update(parts[2:])  # Skip the first two columns (gene set name and link)
+    rnk_remapped_genes = set(rnk_chosen["Gene Symbol"])
+    common_genes = gene_set_genes.intersection(rnk_remapped_genes)
+    
+    if len(common_genes) < 10:
+        errorAndExit("After remapping, the gene set file has less than 10 genes in common with the ranked list file, " \
+                    "the genes in those two files probably have different platform annotations.\n" \
+                    "If you want to use a remapping, please select the appropriate chip platform file.\n\n" \
+                    f"Some of the mismatching genes in the ranked list: {', '.join(list(rnk_remapped_genes.difference(gene_set_genes))[:2])}\n" \
+                    f"Some of the mismatching genes in the gene set file: {', '.join(list(gene_set_genes.difference(rnk_remapped_genes))[:2])}")
 
 try:
     res = gp.prerank(rnk=rnk_chosen,
-                    gene_sets=gene_sets_path,
-                    threads=4,
-                    min_size=min_gene_set,
-                    max_size=max_gene_set,
-                    permutation_num=num_permutation,
-                    outdir=None,
-                    seed=7)
-except Exception:
-    errorAndExit("GSEA preranked failed while computing the analysis.")
+                     gene_sets=gene_sets_path,
+                     threads=4,
+                     min_size=min_gene_set,
+                     max_size=max_gene_set,
+                     permutation_num=num_permutation,
+                     outdir=None,
+                     seed=7)
+except Exception as e:
+    errorAndExit(f"GSEA preranked failed while computing the analysis.\nThe following error was raised:\n{str(e)}")
 
 # Print and send on stdout the result as a JSON-formatted string
 res_json = res.res2d.to_json(orient="records")

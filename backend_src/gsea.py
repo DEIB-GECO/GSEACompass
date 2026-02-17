@@ -65,7 +65,23 @@ if min_gene_set > max_gene_set:
 
 # If remap unselected
 if remap == "none":
-    expression_set_chosen = expression_set
+    # Check if the gene sets and the expression set have at least 10 genes in common, otherwise exit and print error
+    gene_set_genes = set()
+    with open(gene_sets_path, "r") as f:
+        for line in f:
+            parts = line.strip().split("\t")
+            gene_set_genes.update(parts[2:])  # Skip the first two columns (gene set name and link)
+    expr_set_genes = set(expression_set.index)
+    common_genes = gene_set_genes.intersection(expr_set_genes)
+    
+    if len(common_genes) < 10:
+        errorAndExit("The gene set file has less than 10 genes in common with the expression dataset, " \
+                    "the genes in those two files probably have different platform annotations.\n" \
+                    "If you want to use a remapping, please select the appropriate chip platform file.\n\n" \
+                    f"Some of the mismatching genes in the expression dataset: {', '.join(list(expr_set_genes.difference(gene_set_genes))[:2])}\n" \
+                    f"Some of the mismatching genes in the gene set file: {', '.join(list(gene_set_genes.difference(expr_set_genes))[:2])}")
+    else:
+        expression_set_chosen = expression_set
 # If remap selected
 else:
     # If chip file not selected (left blank), exit and print error
@@ -85,9 +101,25 @@ else:
     # Check if any cell (index included) of the chip platform file is missing
     if (chip.iloc[:, 0].isnull().any() or chip.index.hasnans):
         errorAndExit("The chip platform file has some missing values and cannot be used.")
-            
+                    
     # Convert the ranked list genes in the chip platform notation
     expression_set_chosen = expression_set.join(chip).reset_index(drop=True).dropna()
+    
+    # Verify that the gene sets and the expression set have at least 10 genes in common, otherwise exit and print error
+    gene_set_genes = set()
+    with open(gene_sets_path, "r") as f:
+        for line in f:
+            parts = line.strip().split("\t")
+            gene_set_genes.update(parts[2:])  # Skip the first two columns (gene set name and link)
+    expr_remapped_genes = set(expression_set_chosen["Gene Symbol"])
+    common_genes = gene_set_genes.intersection(expr_remapped_genes)
+    
+    if len(common_genes) < 10:
+        errorAndExit("After remapping, the gene set file has less than 10 genes in common with the expression dataset, " \
+                    "the genes in those two files probably have different platform annotations.\n" \
+                    "If you want to use a remapping, please select the appropriate chip platform file.\n\n" \
+                    f"Some of the mismatching genes in the expression dataset: {', '.join(list(expr_remapped_genes.difference(gene_set_genes))[:2])}\n" \
+                    f"Some of the mismatching genes in the gene set file: {', '.join(list(gene_set_genes.difference(expr_remapped_genes))[:2])}")
 
 try:
     res = gp.gsea(data=expression_set_chosen,
