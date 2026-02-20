@@ -28,11 +28,61 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
         tableTitle.innerText = 'GSEA results'
     else if (analysisType === 'gsea_preranked')
         tableTitle.innerText = 'GSEA preranked results'
+    else if (analysisType === 'ssgsea')
+        tableTitle.innerText = 'ssGSEA results'
+    else if (analysisType === 'gsva')
+        tableTitle.innerText = 'GSVA results'
 
-    // Initialise the table
-    table = new DataTable('#dataTable', {
-        data: jsonData,
-        columns: [
+    // Table columns
+    let columnsList = null
+
+    // Buttons to generate plots
+    let plotButtons = null
+
+    // Columns on which ellipsis truncation should be applied
+    let ellipsisColumnsIdx = null
+
+    // If ssGSEA results
+    if (analysisType === 'ssgsea') {
+        columnsList = [
+            { data: 'Select', title: '' },
+            { data: 'Name', title: 'Name' },
+            { data: 'Term', title: 'Term' },
+            { data: 'ES', title: 'ES' },
+            { data: 'NES', title: 'NES' },
+        ]
+
+        plotButtons = [
+            {
+                text: 'Heatmap',
+                name: 'heatmapSSGSEA',
+                enabled: true,
+                action: () => {
+                    // Fetch the visible rows
+                    const visibleRows = table.rows({ search: 'applied' }).data()
+
+                    let rows = ''
+
+                    if (visibleRows.length == 0)
+                        rows = table.rows().data()
+                    else
+                        rows = visibleRows
+
+                    selectedRows = []
+                    for (let i = 0; i < rows.length; i++)
+                        selectedRows[i] = { Name: rows[i].Name, Term: rows[i].Term, ES: rows[i].ES, NES: rows[i].NES }
+
+                    // Send the visible rows in JSON format
+                    window.electronAPI.requestHeatmapSSGSEA(JSON.stringify(selectedRows))
+                }
+            }
+        ]
+
+        ellipsisColumnsIdx = [1, 2]
+    }
+    // If GSEA, GSEA preranked or GSVA results
+    else {
+        columnsList = [
             { data: 'Select', title: '' },
             { data: 'Term', title: 'Term' },
             { data: 'ES', title: 'ES' },
@@ -43,11 +93,128 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
             { data: 'Gene %', title: 'Gene %' },
             { data: 'Tag %', title: 'Tag %' },
             { data: 'Lead_genes', title: 'Lead_genes' }
-        ],
+        ]
+
+        plotButtons = [
+            { 
+                text: 'Enrichment plot',
+                name: 'enrichmentPlot',
+                enabled: false,
+                action: () => {
+                    // Fetch the selected rows
+                    const selectedRows = table.rows({ selected: true }).data()
+                    const numSelectedRows = selectedRows.length
+
+                    // Put each selected rows Term field in an array
+                    const selectedTerms = []
+                    for (let i = 0; i < numSelectedRows; i++)
+                        selectedTerms[i] = selectedRows[i].Term
+
+                    // Send the selected terms in JSON format
+                    window.electronAPI.requestEnrichmentPlot(JSON.stringify(selectedTerms))
+                }
+            },
+            {
+                text: 'Dotplot',
+                name: 'dotplot',
+                enabled: false,
+                action: () => {
+                    // Fetch the selected column title (e.g FDR q-val)
+                    const selectedColumn = table.columns({ selected: true }).titles()[0]
+
+                    // Fetch the selected rows
+                    const selectedRows = table.rows({ selected: true }).data()
+
+                    // Fetch the visible rows
+                    const visibleRows = table.rows({ search: 'applied' }).data()
+
+                    let rows = ''
+                    const selectedTerms = []
+
+                    if (selectedRows.length == 0)
+                        rows = visibleRows
+                    else
+                        rows = selectedRows
+
+                    // Put each chosen row term in an array
+                    for (let i = 0; i < rows.length; i++)
+                        selectedTerms[i] = rows[i].Term
+
+                    // Send the selected column title and selecter/visible rows terms in JSON format
+                    window.electronAPI.requestDotplot(JSON.stringify([selectedColumn, selectedTerms]))
+                }
+            },
+            {
+                text: 'Heatmap',
+                name: 'heatmap',
+                enabled: false,
+                action: () => {
+                    // Fetch the selected row
+                    const selectedRow = table.rows({ selected: true }).data()[0]
+
+                    // Send the selected row in JSON format
+                    window.electronAPI.requestHeatmap(JSON.stringify(selectedRow))
+                }
+            },
+            {
+                text: 'Intersection over union',
+                name: 'iouPlot',
+                enabled: false,
+                action: () => {
+                    // Fetch the selected rows
+                    const selectedRows = table.rows({ selected: true }).data()
+                    const numSelectedRows = selectedRows.length
+
+                    // Put each selected rows Term and Lead_genes fields in an array of dictionaries
+                    const selectedTerms = []
+                    for (let i = 0; i < numSelectedRows; i++)
+                        selectedTerms[i] = selectedRows[i].Term
+
+                    window.electronAPI.requestIOUPlot(JSON.stringify(selectedTerms))
+                }
+            },
+            {
+                text: 'Wordcloud',
+                name: 'wordcloud',
+                enabled: false,
+                action: () => {
+                    // Fetch the selected column title (e.g FDR q-val)
+                    const selectedColumnHeader = table.columns({ selected: true }).titles()[0]
+
+                    // Fetch the selected rows
+                    const selectedRows = table.rows({ selected: true }).data()
+
+                    // Fetch the visible rows
+                    const visibleRows = table.rows({ search: 'applied' }).data()
+
+                    let rows = ''
+                    const selectedStrings = []
+
+                    if (selectedRows.length === 0)
+                        rows = visibleRows
+                    else
+                        rows = selectedRows
+
+                    // Put each chosen row field (that of the selected column) in an array
+                    for (let i = 0; i < rows.length; i++)
+                        selectedStrings[i] = rows[i][selectedColumnHeader]
+
+                    window.electronAPI.requestWordCloud(JSON.stringify(selectedStrings))
+                }
+            }
+        ]
+
+        ellipsisColumnsIdx = [1, 9]
+    }
+
+    // Initialise the table
+    table = new DataTable('#dataTable', {
+        data: jsonData,
+        columns: columnsList,
         columnDefs: [
             {
                 // Enable ellipsis truncation on first and last data columns (term and lead_genes)
-                targets: [1, 9],
+                targets: ellipsisColumnsIdx,
                 render: DataTable.render.ellipsis(25)
             },
             {
@@ -80,115 +247,7 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                     {
                         extend: 'collection',
                         text: 'Generate plot',
-                        buttons: [
-                            {   // First button
-                                text: 'Enrichment plot',
-                                name: 'enrichmentPlot',
-                                enabled: false,
-                                action: () => {
-                                    // Fetch the selected rows
-                                    const selectedRows = table.rows({ selected: true }).data()
-                                    const numSelectedRows = selectedRows.length
-
-                                    // Put each selected rows Term field in an array
-                                    const selectedTerms = []
-                                    for (let i = 0; i < numSelectedRows; i++)
-                                        selectedTerms[i] = selectedRows[i].Term
-
-                                    // Send the selected terms in JSON format
-                                    window.electronAPI.requestEnrichmentPlot(JSON.stringify(selectedTerms))
-                                }
-                            },
-                            {
-                                text: 'Dotplot',
-                                name: 'dotplot',
-                                enabled: false,
-                                action: () => {
-                                    // Fetch the selected column title (e.g FDR q-val)
-                                    const selectedColumn = table.columns({ selected: true }).titles()[0]
-
-                                    // Fetch the selected rows
-                                    const selectedRows = table.rows({ selected: true }).data()
-
-                                    // Fetch the visible rows
-                                    const visibleRows = table.rows({ search: 'applied' }).data()
-
-                                    let rows = ''
-                                    const selectedTerms = []
-
-                                    if (selectedRows.length == 0)
-                                        rows = visibleRows
-                                    else
-                                        rows = selectedRows
-
-                                    // Put each chosen row term in an array
-                                    for (let i = 0; i < rows.length; i++)
-                                        selectedTerms[i] = rows[i].Term
-
-                                    // Send the selected column title and selecter/visible rows terms in JSON format
-                                    window.electronAPI.requestDotplot(JSON.stringify([selectedColumn, selectedTerms]))
-                                }
-                            },
-                            {
-                                text: 'Heatmap',
-                                name: 'heatmap',
-                                enabled: false,
-                                action: () => {
-                                    // Fetch the selected row
-                                    const selectedRow = table.rows({ selected: true }).data()[0]
-
-                                    // Send the selected row in JSON format
-                                    window.electronAPI.requestHeatmap(JSON.stringify(selectedRow))
-                                }
-                            },
-                            {
-                                text: 'Intersection over union',
-                                name: 'iouPlot',
-                                enabled: false,
-                                action: () => {
-                                    // Fetch the selected rows
-                                    const selectedRows = table.rows({ selected: true }).data()
-                                    const numSelectedRows = selectedRows.length
-
-                                    // Put each selected rows Term and Lead_genes fields in an array of dictionaries
-                                    const selectedTerms = []
-                                    for (let i = 0; i < numSelectedRows; i++)
-                                        selectedTerms[i] = selectedRows[i].Term
-
-                                    window.electronAPI.requestIOUPlot(JSON.stringify(selectedTerms))
-                                }
-                            },
-                            {
-                                text: 'Wordcloud',
-                                name: 'wordcloud',
-                                enabled: false,
-                                action: () => {
-                                    // Fetch the selected column title (e.g FDR q-val)
-                                    const selectedColumnHeader = table.columns({ selected: true }).titles()[0]
-
-                                    // Fetch the selected rows
-                                    const selectedRows = table.rows({ selected: true }).data()
-
-                                    // Fetch the visible rows
-                                    const visibleRows = table.rows({ search: 'applied' }).data()
-
-                                    let rows = ''
-                                    const selectedStrings = []
-
-                                    if (selectedRows.length === 0)
-                                        rows = visibleRows
-                                    else
-                                        rows = selectedRows
-
-                                    // Put each chosen row field (that of the selected column) in an array
-                                    for (let i = 0; i < rows.length; i++)
-                                        selectedStrings[i] = rows[i][selectedColumnHeader]
-
-
-                                    window.electronAPI.requestWordCloud(JSON.stringify(selectedStrings))
-                                }
-                            }
-                        ]
+                        buttons: plotButtons
                     },
                     {
                         text: 'Deselect all',
@@ -245,12 +304,16 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
 
         // Show or hide each top bar button if a specific condition is true
         table.button(['deselectAll:name']).enable(numSelectedRows > 0 || numSelectedCols > 0)
-        table.button(['enrichmentPlot:name']).enable(numSelectedRows > 0 && numSelectedCols === 0)
-        table.button(['dotplot:name']).enable(numSelectedCols === 1 && selectedColumns.titles()[0] !== "Term" && selectedColumns.titles()[0] !== "Lead_genes" 
-            && selectedColumns.titles()[0] !== "Gene %" && selectedColumns.titles()[0] !== "Tag %")
-        table.button(['heatmap:name']).enable(numSelectedRows === 1 && analysisType === 'gsea')
-        table.button(['iouPlot:name']).enable(numSelectedRows >= 2 && numSelectedCols === 0)
-        table.button(['wordcloud:name']).enable(numSelectedCols === 1 && (selectedColumns.titles()[0] === "Term" || selectedColumns.titles()[0] === "Lead_genes"))
+
+        // Only update these buttons if they were actually rendered
+        if (analysisType !== 'ssgsea') {
+            table.button(['enrichmentPlot:name']).enable(numSelectedRows > 0 && numSelectedCols === 0)
+            table.button(['dotplot:name']).enable(numSelectedCols === 1 && selectedColumns.titles()[0] !== "Term" && selectedColumns.titles()[0] !== "Lead_genes" 
+                && selectedColumns.titles()[0] !== "Gene %" && selectedColumns.titles()[0] !== "Tag %")
+            table.button(['heatmap:name']).enable(numSelectedRows === 1 && analysisType === 'gsea')
+            table.button(['iouPlot:name']).enable(numSelectedRows >= 2 && numSelectedCols === 0)
+            table.button(['wordcloud:name']).enable(numSelectedCols === 1 && (selectedColumns.titles()[0] === "Term" || selectedColumns.titles()[0] === "Lead_genes"))
+        }
     })
 
     // Every time a row is double clicked
@@ -267,6 +330,12 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
 
     const maxFDRObj = document.querySelector('#maxFDR')
     const maxNOMObj = document.querySelector('#maxNOM')
+
+    // Hide the FDR q-val and NOM p-val filter (first div containing them) if it's ssGSEA
+    if (analysisType === 'ssgsea') {
+        const filterDiv = maxFDRObj.parentElement.parentElement.parentElement.parentElement
+        filterDiv.style.display = 'none'
+    }
 
     // Custom filtering function for FDR q-val and NOM p-val
     table.search.fixed('range', (_searchStr, data, _index) => {

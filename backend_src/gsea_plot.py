@@ -237,15 +237,16 @@ def heatmap_modified(
 # Home directory of user running this script
 HOME_DIR = os.path.expanduser("~")
 
-# Load the saved python session, with all its variables
-dill.load_session(os.path.join(HOME_DIR, "gseacompass_python_session.pkl"))
+# Read plot type argument passed by the script call
+plot_type = sys.argv[1]
+
+if (plot_type != "heatmap-ssgsea"):
+    # Load the saved python session, with all its variables
+    dill.load_session(os.path.join(HOME_DIR, "gseacompass_python_session.pkl"))
 
 # Default plot file name and extensions
 PLOT_FILE = os.path.join(HOME_DIR, "gsea_plot")
 plot_extensions = [".png", ".pdf", ".svg"]
-
-# Read plot type argument passed by the script call
-plot_type = sys.argv[1]
 
 match plot_type:
 
@@ -452,6 +453,38 @@ match plot_type:
         # The .svg image extension is excluded, since it's not supported for wordclouds
         for ext in plot_extensions[:2]:
             wc.to_file(PLOT_FILE + ext)
+    
+    case "heatmap-ssgsea":
+        visible_rows_file_path = sys.argv[2]
+        size_x = float(sys.argv[3])
+        size_y = float(sys.argv[4])
+        measurement_unit = sys.argv[5]
+        
+        converted_size_x = convert_to_inches(measurement_unit, size_x)
+        converted_size_y = convert_to_inches(measurement_unit, size_y)
+        
+        if (converted_size_x > 50 or converted_size_y > 50):
+            print("Plot sizes cannot exceed 50 inches.")
+            exit(1)
+            
+        # Read selected column data from file path passed as CLI arguments
+        file = open(visible_rows_file_path, "r")
+        visible_rows = file.read()
+        file.close()
+        
+        data = pd.read_json(StringIO(visible_rows))
+        
+        # make data as table Term versus Name, with NES values as values
+        data = data.pivot(index="Term", columns="Name", values="NES")
+
+        # Plot heatmap without gseapy, on NES values of the visible rows, with seaborn
+        fig, ax = plt.subplots(figsize=(converted_size_x, converted_size_y))
+        sns.heatmap(data, cmap="YlGnBu", ax=ax, linewidths=0.5, linecolor='lightgrey')
+        ax.set_title("ssGSEA NES Heatmap", fontsize=16)
+        
+        # Save the figure as an images with several extensions
+        for ext in plot_extensions:
+            fig.savefig(PLOT_FILE + ext, bbox_inches='tight')
     
     case _:
         print("The requested plot doesn't exist", file=sys.stderr)

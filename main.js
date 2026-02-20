@@ -138,9 +138,75 @@ const createMainWindow = () => {
         createGseaWindow()
         mainWindow.close()
     })
-
+    ipcMain.removeAllListeners('open-ssgsea')
+    ipcMain.on('open-ssgsea', () => {
+        createSsgseaWindow()
+        mainWindow.close()
+    })
 
     mainWindow.loadFile(localPath('web', 'main'))
+}
+
+// Function that creates and handles the ssGSEA analysis window
+const createSsgseaWindow = () => {
+    const ssgseaWindow = new BrowserWindow({
+        width: 780,
+        height: 750,
+        icon: localPath('icon', 'compass_1024px.png'),
+        webPreferences: {
+            preload: localPath('preload', 'ssgsea_preload')
+        }
+    })
+
+    // Message sent by the SsgseaWindow renderer when an analysis has been requested
+    ipcMain.removeAllListeners('send-data-ssgsea')
+    ipcMain.on('send-data-ssgsea', (_event, geneSetsPath, expressionSetPath, minGeneSet, maxGeneSet) => {
+        let pythonProcess = null
+
+        // Show the loading animation web page
+        ssgseaWindow.loadFile(localPath('web', 'loading'))
+
+        pythonProcess = spawnPythonProcess('ssgsea', [geneSetsPath, expressionSetPath, minGeneSet, maxGeneSet])
+
+        let jsonContent = ''
+
+        pythonProcess.stdout.on('data', (data) => {
+            jsonContent += data
+        })
+
+        pythonProcess.on('exit', (code) => {
+            if (code === 0) {
+                globalThis.chosenGeneSetsPath = geneSetsPath
+                createTableWindow(jsonContent, 'ssgsea')
+                ssgseaWindow.close()
+            }
+            // In case of error show the ssGSEA web page
+            else {
+                ssgseaWindow.loadFile(localPath('web', 'ssgsea'))
+            }
+        })
+
+        popupOnProcessFail(pythonProcess)
+    })
+
+    // Go back to the home window
+    ipcMain.removeAllListeners('go-back-to-home')
+    ipcMain.on('go-back-to-home', () => {
+        createMainWindow()
+        ssgseaWindow.close()
+    })
+
+    // Request from the SsgseaWindow renderer to show an helper popup
+    ipcMain.removeAllListeners('show-helper-popup')
+    ipcMain.on('show-helper-popup', (_event, helpString) => {
+        dialog.showMessageBox({
+            message: helpString,
+            type: 'info',
+            title: 'Helper'
+        })
+    })
+
+    ssgseaWindow.loadFile(localPath('web', 'ssgsea'))
 }
 
 // Function that creates and handles the GSEA analysis window
@@ -352,15 +418,15 @@ const createTableWindow = (jsonRawData, analysisType) => {
     })
 
     ipcMain.removeAllListeners('request-heatmap')
-    ipcMain.on('request-heatmap', (_event, selectedRow, sizeX, sizeY, measurementUnit, createOrUpdate) => {
+    ipcMain.on('request-heatmap', (_event, selectedRows, sizeX, sizeY, measurementUnit, createOrUpdate) => {
         let pythonProcess = null
 
-        pythonProcess = spawnPythonProcess('gsea_plot', ['heatmap', selectedRow, sizeX, sizeY, measurementUnit])
+        pythonProcess = spawnPythonProcess('gsea_plot', ['heatmap', selectedRows, sizeX, sizeY, measurementUnit])
 
         pythonProcess.on('exit', (code) => {
             if (code == 0) {
                 if (createOrUpdate == 'create')
-                    createPlotWindow(900, 800, 'heatmap', selectedRow)
+                    createPlotWindow(900, 800, 'heatmap', selectedRows)
                 else if (createOrUpdate == 'update')
                     // Send the update message just if plotWindow object is not null (.?)
                     globalThis.plotWindow?.webContents.send('plot-updated')
@@ -398,7 +464,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         // Needed since, most of the times, lead_gene data are too long to be passed as argument
         writeFileSync(tmpFile.name, selectedColumn, (err) => {
             if (err)
-                error('The selected column data file, to be passed to python script, couldn\'t be created.')
+                error('The selected column data file couldn\'t be created.')
         })
 
         let pythonProcess = null
@@ -412,6 +478,38 @@ const createTableWindow = (jsonRawData, analysisType) => {
             if (code == 0) {
                 if (createOrUpdate == 'create')
                     createPlotWindow(800, 600, 'wordcloud', selectedColumn)
+                else if (createOrUpdate == 'update')
+                    // Send the update message just if plotWindow object is not null (.?)
+                    globalThis.plotWindow?.webContents.send('plot-updated')
+            }
+        })
+
+        popupOnProcessFail(pythonProcess)
+    })
+
+    ipcMain.removeAllListeners('request-heatmap-ssgsea')
+    ipcMain.on('request-heatmap-ssgsea', (_event, visibleRows, sizeX, sizeY, measurementUnit, createOrUpdate) => {
+        // Create a tmp file
+        const tmpFile = fileSync();
+
+        // Write to the tmp file the selected column data
+        // Needed since, most of the times, lead_gene data are too long to be passed as argument
+        writeFileSync(tmpFile.name, visibleRows, (err) => {
+            if (err)
+                error('The table data file couldn\'t be created.')
+        })
+
+        let pythonProcess = null
+
+        pythonProcess = spawnPythonProcess('gsea_plot', ['heatmap-ssgsea', tmpFile.name, sizeX, sizeY, measurementUnit])
+
+        pythonProcess.on('exit', (code) => {
+            // Remove the tmp file
+            tmpFile.removeCallback()
+
+            if (code == 0) {
+                if (createOrUpdate == 'create')
+                    createPlotWindow(900, 800, 'heatmap-ssgsea', visibleRows)
                 else if (createOrUpdate == 'update')
                     // Send the update message just if plotWindow object is not null (.?)
                     globalThis.plotWindow?.webContents.send('plot-updated')
@@ -611,6 +709,13 @@ const menuTemplate = [
                 }
             }
         ]
+    },
+    {
+        label: 'Toggle Developer Tools',
+        click(item, focusedWindow) {
+            if (focusedWindow)
+                focusedWindow.webContents.toggleDevTools()
+        }
     }
 ]
 Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate))

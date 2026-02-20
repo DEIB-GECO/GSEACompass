@@ -5,4 +5,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.send('open-gsea-preranked'),
     openGsea: () => 
         ipcRenderer.send('open-gsea')
+    ,
+    openSsgsea: () =>
+        ipcRenderer.send('open-ssgsea')
 })

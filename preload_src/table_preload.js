@@ -24,5 +24,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.send('request-wordcloud', selectedColumn, 800, 500, 'px', 'create'),
 
     requestGeneSetInfo: (selectedTerm) => 
-        ipcRenderer.send('request-gene-set-info', selectedTerm)
+        ipcRenderer.send('request-gene-set-info', selectedTerm),
+
+    requestHeatmapSSGSEA: (visibleRows) =>
+        ipcRenderer.send('request-heatmap-ssgsea', visibleRows, 14, 4, 'in', 'create')
 })
