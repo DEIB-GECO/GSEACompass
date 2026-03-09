@@ -1,6 +1,6 @@
 {
     "name": "gseacompass",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "gseacompass",
     "main": "./main.js",
     "scripts": {
@@ -23,14 +23,6 @@
                 ]
             },
             "makers": [
-                {
-                    "name": "@electron-forge/maker-squirrel",
-                    "config": {
-                        "options": {
-                            "icon": "icons/compass_1024px.png"
-                        }
-                    }
-                },
                 {
                     "name": "@electron-forge/maker-zip",
                     "platforms": [

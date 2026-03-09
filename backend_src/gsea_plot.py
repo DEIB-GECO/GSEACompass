@@ -10,11 +10,19 @@ import numpy as np
 import seaborn as sns
 from wordcloud import WordCloud
 from typing import Sequence, Optional, List, Tuple, Dict, Union, Any
-import fontTools
-import fontTools.ttLib.ttFont
-import fontTools.ttLib.tables.otTables
-import fontTools.otlLib.maxContextCalc
-import fontTools.subset.util
+import torch
+import torch.nn.functional as F
+from transformers import AutoTokenizer, AutoModel
+import networkx as nx
+import matplotlib.pyplot as plt
+from tqdm.auto import tqdm
+import json
+import math
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
+import matplotlib.lines as mlines
+from pyvis.network import Network
+
 
 # Utility function to convert inches, cm and px
 def convert_to_inches(measurement_unit, value):
@@ -240,7 +248,7 @@ HOME_DIR = os.path.expanduser("~")
 # Read plot type argument passed by the script call
 plot_type = sys.argv[1]
 
-if (plot_type != "heatmap-ssgsea"):
+if (plot_type not in ["heatmap-ssgsea", "heatmap-gsva", "similarity-graph"]):
     # Load the saved python session, with all its variables
     dill.load_session(os.path.join(HOME_DIR, "gseacompass_python_session.pkl"))
 
@@ -474,10 +482,10 @@ match plot_type:
         
         data = pd.read_json(StringIO(visible_rows))
         
-        # make data as table Term versus Name, with NES values as values
+        # Make data as table Term versus Name, with NES values as values
         data = data.pivot(index="Term", columns="Name", values="NES")
 
-        # Plot heatmap without gseapy, on NES values of the visible rows, with seaborn
+        # Plot heatmap without gseapy, on NES values of the visible rows
         fig, ax = plt.subplots(figsize=(converted_size_x, converted_size_y))
         sns.heatmap(data, cmap="YlGnBu", ax=ax, linewidths=0.5, linecolor='lightgrey')
         ax.set_title("ssGSEA NES Heatmap", fontsize=16)
@@ -485,7 +493,216 @@ match plot_type:
         # Save the figure as an images with several extensions
         for ext in plot_extensions:
             fig.savefig(PLOT_FILE + ext, bbox_inches='tight')
+            
+    case "similarity-graph":
+        selected_terms_raw = sys.argv[2]
+        size_x = float(sys.argv[3])        
+        size_y = float(sys.argv[4])
+        measurement_unit = sys.argv[5]
+
+        # Parse the JSON containing Term, Score, and FDR
+        graph_data = json.loads(selected_terms_raw)
+        
+        # Fallback for backward compatibility
+        if len(graph_data) > 0 and isinstance(graph_data[0], str):
+            graph_data = [{"Term": t, "Score": 0, "FDR": 1.0} for t in graph_data]
+
+        selected_terms = [item["Term"] for item in graph_data]
+        scores = [item["Score"] for item in graph_data]
+        fdrs = [item["FDR"] for item in graph_data]
+
+        # Clean up the terms for the model
+        model_inputs = [term.replace("_", " ").replace(";", " ").replace(",", " ").strip().lower() for term in selected_terms]
+
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        local_model_path = os.path.abspath(os.path.join(current_dir, '..', 'misc_resources', 'SapBERT_model'))
+
+        # Load the model and tokenizer from the folder
+        tokenizer = AutoTokenizer.from_pretrained(local_model_path)
+        model = AutoModel.from_pretrained(local_model_path, use_safetensors=True)
+        
+        bs = 128 
+        all_embs = []
+        for i in tqdm(np.arange(0, len(model_inputs), bs)):
+            toks = tokenizer(model_inputs[i:i+bs], padding="max_length", max_length=25, truncation=True, return_tensors="pt")
+            cls_rep = model(**toks)[0][:,0,:] 
+            all_embs.append(cls_rep.cpu().detach().numpy())
+
+        all_embs = np.concatenate(all_embs, axis=0)
+        norm_all_embs = F.normalize(torch.tensor(all_embs), p=2, dim=1)
+        similarity_matrix = torch.mm(norm_all_embs, norm_all_embs.transpose(0, 1))
+        
+        # Biological Context Formatting
+        node_sizes = [10 + 5 * (-math.log10(max(f, 1e-5))) for f in fdrs] # Scaled for Pyvis
+        max_abs_score = max([abs(s) for s in scores] + [1e-5])
+        norm = mcolors.TwoSlopeNorm(vmin=-max_abs_score, vcenter=0, vmax=max_abs_score)
+        cmap = cm.get_cmap('coolwarm')
+        node_colors = [mcolors.to_hex(cmap(norm(s))) for s in scores] # Pyvis requires HEX
+
+        # Generate Interactive Graph
+        net = Network(height="100vh", width="100%", bgcolor="#ffffff", font_color="black")
+        net.repulsion(node_distance=250, central_gravity=0.05, spring_length=200, spring_strength=0.05, damping=0.9)
+
+        # Add Nodes
+        for i in range(len(model_inputs)):
+            tooltip = f"{selected_terms[i]}\nNES: {scores[i]:.2f}\nFDR q-val: {fdrs[i]:.4f}"
+            net.add_node(i, label=f"G{i}", title=tooltip, color=node_colors[i], size=node_sizes[i])
+
+        # Add Edges
+        for i in range(len(model_inputs)):
+            for j in range(i+1, len(model_inputs)):
+                weight = similarity_matrix[i, j].item()
+                if weight > 0.1: 
+                    net.add_edge(i, j, width=1.3, weight=weight, title=f"Similarity: {weight:.2f}", color="#cccccc", smooth=False)
+
+        net.write_html(PLOT_FILE + ".html")
+        
+        # Build the dynamic list mapping G-labels to pathways
+        term_legend_html = "<div style='max-height: 250px; overflow-y: auto; font-size: 11px; margin-top: 15px; border-top: 1px solid #ccc; padding-top: 10px;'>"
+        for i, term in enumerate(selected_terms):
+            term_legend_html += f"<div style='margin-bottom: 4px;'><b>G{i}</b>: {term}</div>"
+        term_legend_html += "</div>"
+        
+        with open(PLOT_FILE + ".html", "r") as f:
+            html = f.read()
+
+        ui_injection = f"""
+        <div style="position: absolute; top: 20px; left: 20px; z-index: 9999; background: rgba(255,255,255,0.95); padding: 15px; border-radius: 8px; border: 1px solid #ccc; font-family: sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <label for="threshold-slider" style="font-weight: bold; font-size: 14px;">Edge Cosine Similarity Threshold: <span id="threshold-val" style="color: #0048ff;">0.75</span></label><br>
+            <input type="range" min="0" max="1" step="0.01" id="threshold-slider" value="0.75" style="width: 250px; margin-top: 10px;">
+        </div>
+        
+        <div style="position: absolute; top: 20px; right: 20px; z-index: 9999; background: rgba(255,255,255,0.95); padding: 15px; border-radius: 8px; border: 1px solid #ccc; font-family: sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-size: 12px; width: 320px;">
+            <b>Node Color (NES)</b><br>
+            <div style="background: linear-gradient(to right, #3b4cc0, #dddddd, #b40426); width: 100%; height: 15px; border-radius: 3px; margin-top: 5px; margin-bottom: 5px;"></div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 15px;"><span>Down</span><span>Up</span></div>
+            <b>Node Size (FDR q-val)</b><br>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 5px;">
+                <div style="width: 10px; height: 10px; border-radius: 50%; background: #999;"></div> Not Sig.
+                <div style="width: 25px; height: 25px; border-radius: 50%; background: #999;"></div> Highly Sig.
+            </div>
+            {term_legend_html}
+        </div>
+
+        <script>
+        document.addEventListener("DOMContentLoaded", function() {{
+            setTimeout(function() {{
+                if (typeof edges !== 'undefined') {{
+                    var slider = document.getElementById('threshold-slider');
+                    var valSpan = document.getElementById('threshold-val');
+                    var allEdges = edges.get(); 
+                    
+                    function updateEdges(thresh) {{
+                        var updates = [];
+                        allEdges.forEach(function(edge) {{
+                            updates.push({{id: edge.id, hidden: edge.weight < thresh}});
+                        }});
+                        edges.update(updates);
+                    }}
+                    
+                    slider.addEventListener('input', function() {{
+                        var val = parseFloat(this.value);
+                        valSpan.innerText = val.toFixed(2);
+                        updateEdges(val);
+                    }});
+                    updateEdges(parseFloat(slider.value)); // Initial filter
+                }}
+            }}, 1500); // Give vis.js time to initialize
+        }});
+        </script>
+        """
+        html = html.replace("</body>", ui_injection + "</body>")
+        with open(PLOT_FILE + ".html", "w") as f:
+            f.write(html)
     
+    case "similarity-heatmap":
+        selected_terms_raw = sys.argv[2]
+        size_x = float(sys.argv[3])
+        size_y = float(sys.argv[4])
+        measurement_unit = sys.argv[5]
+        
+        converted_size_x = convert_to_inches(measurement_unit, size_x)
+        converted_size_y = convert_to_inches(measurement_unit, size_y)
+        
+        if (converted_size_x > 50 or converted_size_y > 50):
+            print("Plot sizes cannot exceed 50 inches.")
+            exit(1)
+            
+       # Parse the JSON containing Term, Score, and FDR
+        heatmap_data = json.loads(selected_terms_raw)
+        
+        # Fallback for backward compatibility
+        if len(heatmap_data) > 0 and isinstance(heatmap_data[0], str):
+            heatmap_data = [{"Term": t, "Score": 0, "FDR": 1.0} for t in heatmap_data]
+
+        selected_terms = [item["Term"] for item in heatmap_data]
+        scores = [item["Score"] for item in heatmap_data]
+        fdrs = [item["FDR"] for item in heatmap_data]
+
+        # Clean up the terms for the model
+        model_inputs = [term.replace("_", " ").replace(";", " ").replace(",", " ").strip().lower() for term in selected_terms]
+
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        local_model_path = os.path.abspath(os.path.join(current_dir, '..', 'misc_resources', 'SapBERT_model'))
+
+        # Load the model and tokenizer from the folder
+        tokenizer = AutoTokenizer.from_pretrained(local_model_path)
+        model = AutoModel.from_pretrained(local_model_path, use_safetensors=True)
+        
+        bs = 128 # batch size during inference
+        all_embs = []
+        for i in tqdm(np.arange(0, len(model_inputs), bs)):
+            toks = tokenizer(model_inputs[i:i+bs], padding="max_length", max_length=25, truncation=True, return_tensors="pt")
+            cls_rep = model(**toks)[0][:,0,:] # use CLS representation as the embedding
+            all_embs.append(cls_rep.cpu().detach().numpy())
+            
+        all_embs = np.concatenate(all_embs, axis=0)
+        norm_all_embs = F.normalize(torch.tensor(all_embs), p=2, dim=1)
+        
+        similarity_matrix = torch.mm(norm_all_embs, norm_all_embs.transpose(0, 1)).numpy()
+        
+        labels = {f'G{i}': term for i, term in enumerate(selected_terms)}
+        
+        plt.figure(figsize=(converted_size_x, converted_size_y))
+        sns.heatmap(similarity_matrix, xticklabels=list(labels.keys()), yticklabels=list(labels.keys()), cmap='YlGnBu', linewidths=0.5, linecolor='lightgrey')
+        plt.title("Similarity Heatmap", fontsize=16)
+        
+        plt.legend([plt.Line2D([0], [0], color='lightblue', marker='', linestyle='') for _ in labels], 
+                   [f'{k}: {v}' for k, v in labels.items()], bbox_to_anchor=(1.30, 1.1), loc='upper left')
+        
+        # Save the figure as an images with several extensions
+        for ext in plot_extensions:
+            plt.savefig(PLOT_FILE + ext, bbox_inches='tight')
+            
+    case "heatmap-gsva":
+        visible_rows_file_path = sys.argv[2]
+        size_x = float(sys.argv[3])
+        size_y = float(sys.argv[4])
+        measurement_unit = sys.argv[5]
+        
+        converted_size_x = convert_to_inches(measurement_unit, size_x)
+        converted_size_y = convert_to_inches(measurement_unit, size_y)
+        
+        if (converted_size_x > 50 or converted_size_y > 50):
+            print("Plot sizes cannot exceed 50 inches.")
+            exit(1)
+            
+        file = open(visible_rows_file_path, "r")
+        visible_rows = file.read()
+        file.close()
+        
+        data = pd.read_json(StringIO(visible_rows))
+        
+        # Pivot on ES instead of NES
+        data = data.pivot(index="Term", columns="Name", values="ES")
+
+        fig, ax = plt.subplots(figsize=(converted_size_x, converted_size_y))
+        sns.heatmap(data, cmap="YlGnBu", ax=ax, linewidths=0.5, linecolor='lightgrey')
+        ax.set_title("GSVA ES Heatmap", fontsize=16)
+        
+        for ext in plot_extensions:
+            fig.savefig(PLOT_FILE + ext, bbox_inches='tight')
+            
     case _:
         print("The requested plot doesn't exist", file=sys.stderr)
         exit(1)

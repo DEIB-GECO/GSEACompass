@@ -39,30 +39,44 @@ zoomOutButton.addEventListener('click', () => {
     panzoom.zoomOut()
 })
 
-// Behavior when plot data received
+// Listen for plot data received
 window.electronAPI.onReceviedData((plotType, plotArg, plotPath) => {
-    img.src = plotPath + '.png'
+    const imageContainer = document.querySelector('#image-container');
+    const iframePlot = document.querySelector('#interactive-plot');
+    const controlsContainer = document.querySelector('#controls-container');
 
-    savePngHiddenAnchor.href = plotPath + '.png'
-    savePdfHiddenAnchor.href = plotPath + '.pdf'
-    saveSvgHiddenAnchor.href = plotPath + '.svg'
+    if (plotType === 'similarity-graph') {
+        // Show interactive HTML, hide static tools
+        imageContainer.style.display = 'none';
+        controlsContainer.style.display = 'none';
+        iframePlot.style.display = 'block';
+        iframePlot.src = plotPath + '.html';
+    } else {
+        // Standard static plot setup
+        imageContainer.style.display = 'block';
+        controlsContainer.style.display = 'block';
+        iframePlot.style.display = 'none';
+        
+        img.src = plotPath + '.png'
 
-    // Hide SVG save button for wordcloud plot, since it's not supported
-    if (plotType == 'wordcloud')
-        saveSvgButton.style.display = 'none'
+        savePngHiddenAnchor.href = plotPath + '.png'
+        savePdfHiddenAnchor.href = plotPath + '.pdf'
+        saveSvgHiddenAnchor.href = plotPath + '.svg'
 
-    // Update the plot size when update button clicked
-    updateSizeButton.addEventListener('click', () => {
-        // If the inputs are not empty
-        if (xSize.value != '' && ySize.value != '') {
-            window.electronAPI.changePlotSize(plotType, plotArg, xSize.value, ySize.value, measurementUnit.value)
+        if (plotType == 'wordcloud')
+            saveSvgButton.style.display = 'none'
+        else
+            saveSvgButton.style.display = 'block'
 
-            // Needed to update the image after being re-generated
-            // otherwise, because of cache, the same would be shown
-            window.electronAPI.onPlotUpdated(() => {
-                const timestamp = new Date().getTime()
-                img.src = plotPath + '.png?t=' + timestamp
-            })
+        // Set up the update size listener
+        updateSizeButton.onclick = () => {
+            if (xSize.value != '' && ySize.value != '') {
+                window.electronAPI.changePlotSize(plotType, plotArg, xSize.value, ySize.value, measurementUnit.value)
+                window.electronAPI.onPlotUpdated(() => {
+                    const timestamp = new Date().getTime()
+                    img.src = plotPath + '.png?t=' + timestamp
+                })
+            }
         }
-    })
+    }
 })

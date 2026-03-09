@@ -32,9 +32,11 @@
 
 <body>
     <!-- Image -->
-    <div>
+    <div id="image-container">
         <img class="center-fit" id="panzoom-img" />
     </div>
+    
+    <iframe id="interactive-plot" style="display: none; width: 100vw; height: 100vh; border: none;"></iframe>
 
     <!-- Hidden anchor for saving the png image -->
     <a id="save-png-hidden-anchor" download hidden></a>
@@ -44,7 +46,7 @@
     <a id="save-svg-hidden-anchor" download hidden></a>
 
     <!-- Buttons -->
-    <div class="mx-4">
+    <div class="mx-4" id="controls-container">
         <div class="row mb-4">
             <!-- Save buttons -->
             <div class="btn-group col dropdown">
@@ -65,6 +67,7 @@
                 <button class="btn btn-secondary" id="zoom-out-btn">Zoom Out</button>
             </div>
         </div>
+
         <div class="row">
             <!-- Size inputs -->
             <div class="col">
@@ -83,7 +86,7 @@
                 </select>
             </div>
 
-            <!-- Chane size button -->
+            <!-- Change size button -->
             <div class="btn-group col">
                 <button class="btn btn-secondary" id="update-size-btn">Update size</button>
             </div>

@@ -11,6 +11,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     requestEnrichmentPlot: (selectedTerms) => 
         ipcRenderer.send('request-enrichment-plot', selectedTerms, 4, 5, 'in', 'create'),
 
+    requestSimilarityGraph: (selectedTerms) =>
+        ipcRenderer.send('request-similarity-graph', selectedTerms, 4, 5, 'in', 'create'),
+
+    requestSimilarityHeatmap: (selectedTerms) =>
+        ipcRenderer.send('request-similarity-heatmap', selectedTerms, 4, 5, 'in', 'create'),
+
     requestDotplot: (selectedColumnAndTerms) => 
         ipcRenderer.send('request-dotplot', selectedColumnAndTerms, 4, 7, 'in', 'create'),
 
@@ -27,5 +33,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.send('request-gene-set-info', selectedTerm),
 
     requestHeatmapSSGSEA: (visibleRows) =>
-        ipcRenderer.send('request-heatmap-ssgsea', visibleRows, 14, 4, 'in', 'create')
+        ipcRenderer.send('request-heatmap-ssgsea', visibleRows, 14, 4, 'in', 'create'),
+
+    requestHeatmapGSVA: (visibleRows) =>
+        ipcRenderer.send('request-heatmap-gsva', visibleRows, 14, 4, 'in', 'create'),
+
+    onPlotCreationComplete: (callback) => 
+        ipcRenderer.on('plot-creation-complete', () => callback())
 })

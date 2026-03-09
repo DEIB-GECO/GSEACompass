@@ -77,7 +77,7 @@ const localPath = (type, file) => {
             ext = '.py'
             break
         case 'pythonBin':
-            dir = join('backend_src', 'dist', 'gseacompass')
+            dir = join('backend_src', 'dist', 'gseacompass', 'runner')
             if (process.platform == 'win32')
                 ext = '.exe'
             break
@@ -103,10 +103,13 @@ const localPath = (type, file) => {
 // Utility function that spawns a python process either using 
 // packaged executables or the local python environment, based on the app environment
 const spawnPythonProcess = (scriptName, args) => {
-    if (app.isPackaged)
-        return spawn(localPath('pythonBin', scriptName), args)
-    else
+    if (app.isPackaged) {
+        // Target 'runner', but pass the specific scriptName as the first argument
+        return spawn(localPath('pythonBin', 'runner'), [scriptName, ...args])
+    } else {
+        // In development, run the individual python files natively
         return spawn('python', [localPath('python', scriptName), ...args])
+    }
 }
 
 // Setup the logger
@@ -133,18 +136,72 @@ const createMainWindow = () => {
         createGseaPrerankedWindow()
         mainWindow.close()
     })
+
     ipcMain.removeAllListeners('open-gsea')
     ipcMain.on('open-gsea', () => {
         createGseaWindow()
         mainWindow.close()
     })
+
     ipcMain.removeAllListeners('open-ssgsea')
     ipcMain.on('open-ssgsea', () => {
         createSsgseaWindow()
         mainWindow.close()
     })
 
+    ipcMain.removeAllListeners('open-gsva')
+    ipcMain.on('open-gsva', () => {
+        createGsvaWindow()
+        mainWindow.close()
+    })
+
     mainWindow.loadFile(localPath('web', 'main'))
+}
+
+// Function that creates and handles the GSVA analysis window
+const createGsvaWindow = () => {
+    const gsvaWindow = new BrowserWindow({
+        width: 780,
+        height: 750,
+        icon: localPath('icon', 'compass_1024px.png'),
+        webPreferences: {
+            preload: localPath('preload', 'gsva_preload')
+        }
+    })
+
+    ipcMain.removeAllListeners('send-data-gsva')
+    ipcMain.on('send-data-gsva', (_event, geneSetsPath, expressionSetPath, minGeneSet, maxGeneSet) => {
+        gsvaWindow.loadFile(localPath('web', 'loading'))
+
+        let pythonProcess = spawnPythonProcess('gsva', [geneSetsPath, expressionSetPath, minGeneSet, maxGeneSet])
+        let jsonContent = ''
+
+        pythonProcess.stdout.on('data', (data) => { jsonContent += data })
+
+        pythonProcess.on('exit', (code) => {
+            if (code === 0) {
+                globalThis.chosenGeneSetsPath = geneSetsPath
+                createTableWindow(jsonContent, 'gsva')
+                gsvaWindow.close()
+            } else {
+                gsvaWindow.loadFile(localPath('web', 'gsva'))
+            }
+        })
+        popupOnProcessFail(pythonProcess)
+    })
+
+    ipcMain.removeAllListeners('go-back-to-home')
+    ipcMain.on('go-back-to-home', () => {
+        createMainWindow()
+        gsvaWindow.close()
+    })
+
+    ipcMain.removeAllListeners('show-helper-popup')
+    ipcMain.on('show-helper-popup', (_event, helpString) => {
+        dialog.showMessageBox({ message: helpString, type: 'info', title: 'Helper' })
+    })
+
+    gsvaWindow.loadFile(localPath('web', 'gsva'))
 }
 
 // Function that creates and handles the ssGSEA analysis window
@@ -374,14 +431,86 @@ const createTableWindow = (jsonRawData, analysisType) => {
 
         pythonProcess.on('exit', (code) => {
             if (code == 0) {
-                if (createOrUpdate == 'create')
+                if (createOrUpdate == 'create') {
                     createPlotWindow(800, 600, 'enrichment-plot', selectedTerms)
+
+                    tableWindow.webContents.send('plot-creation-complete')
+                }
                 else if (createOrUpdate == 'update')
                     // Send the update message just if plotWindow object is not null (.?)
                     globalThis.plotWindow?.webContents.send('plot-updated')
             }
         })
 
+        popupOnProcessFail(pythonProcess)
+    })
+
+    ipcMain.removeAllListeners('request-similarity-graph')
+    ipcMain.on('request-similarity-graph', (_event, selectedTerms, sizeX, sizeY, measurementUnit, createOrUpdate) => {
+        let pythonProcess = null
+
+        pythonProcess = spawnPythonProcess('gsea_plot', ['similarity-graph', selectedTerms, sizeX, sizeY, measurementUnit])
+
+        pythonProcess.on('exit', (code) => {
+            if (code == 0) {
+                if (createOrUpdate == 'create') {
+                    createPlotWindow(800, 600, 'similarity-graph', selectedTerms)
+
+                    tableWindow.webContents.send('plot-creation-complete')
+                }
+                else if (createOrUpdate == 'update')
+                    // Send the update message just if plotWindow object is not null (.?)
+                    globalThis.plotWindow?.webContents.send('plot-updated')
+            }
+        })
+
+        popupOnProcessFail(pythonProcess)
+    })
+
+    ipcMain.removeAllListeners('request-similarity-heatmap')
+    ipcMain.on('request-similarity-heatmap', (_event, selectedTerms, sizeX, sizeY, measurementUnit, createOrUpdate) => {
+        let pythonProcess = null
+
+        pythonProcess = spawnPythonProcess('gsea_plot', ['similarity-heatmap', selectedTerms, sizeX, sizeY, measurementUnit])
+
+        pythonProcess.on('exit', (code) => {
+            if (code == 0) {
+                if (createOrUpdate == 'create') {
+                    createPlotWindow(900, 800, 'similarity-heatmap', selectedTerms)
+
+                    tableWindow.webContents.send('plot-creation-complete')
+                }
+                else if (createOrUpdate == 'update')
+                    // Send the update message just if plotWindow object is not null (.?)
+                    globalThis.plotWindow?.webContents.send('plot-updated')
+            }
+        })
+
+        popupOnProcessFail(pythonProcess)
+    })
+
+    ipcMain.removeAllListeners('request-heatmap-gsva')
+    ipcMain.on('request-heatmap-gsva', (_event, visibleRows, sizeX, sizeY, measurementUnit, createOrUpdate) => {
+        const tmpFile = fileSync();
+        writeFileSync(tmpFile.name, visibleRows, (err) => {
+            if (err) error('The table data file couldn\'t be created.')
+        })
+
+        // Call python with 'heatmap-gsva'
+        let pythonProcess = spawnPythonProcess('gsea_plot', ['heatmap-gsva', tmpFile.name, sizeX, sizeY, measurementUnit])
+
+        pythonProcess.on('exit', (code) => {
+            tmpFile.removeCallback()
+            if (code == 0) {
+                if (createOrUpdate == 'create') {
+                    createPlotWindow(900, 800, 'heatmap-gsva', visibleRows)
+
+                    tableWindow.webContents.send('plot-creation-complete')
+                }
+                else if (createOrUpdate == 'update')
+                    globalThis.plotWindow?.webContents.send('plot-updated')
+            }
+        })
         popupOnProcessFail(pythonProcess)
     })
 
@@ -406,8 +535,11 @@ const createTableWindow = (jsonRawData, analysisType) => {
             tmpFile.removeCallback()
 
             if (code == 0) {
-                if (createOrUpdate == 'create')
+                if (createOrUpdate == 'create') {
                     createPlotWindow(900, 800, 'dotplot', selectedColumnAndTerms)
+
+                    tableWindow.webContents.send('plot-creation-complete')
+                }
                 else if (createOrUpdate == 'update')
                     // Send the update message only if plotWindow object is not null (.?)
                     globalThis.plotWindow?.webContents.send('plot-updated')
@@ -425,8 +557,11 @@ const createTableWindow = (jsonRawData, analysisType) => {
 
         pythonProcess.on('exit', (code) => {
             if (code == 0) {
-                if (createOrUpdate == 'create')
+                if (createOrUpdate == 'create') {
                     createPlotWindow(900, 800, 'heatmap', selectedRows)
+
+                    tableWindow.webContents.send('plot-creation-complete')
+                }
                 else if (createOrUpdate == 'update')
                     // Send the update message just if plotWindow object is not null (.?)
                     globalThis.plotWindow?.webContents.send('plot-updated')
@@ -444,8 +579,11 @@ const createTableWindow = (jsonRawData, analysisType) => {
 
         pythonProcess.on('exit', (code) => {
             if (code == 0) {
-                if (createOrUpdate == 'create')
+                if (createOrUpdate == 'create') {
                     createPlotWindow(800, 600, 'iou-plot', selectedTerms)
+
+                    tableWindow.webContents.send('plot-creation-complete')
+                }
                 else if (createOrUpdate == 'update')
                     // Send the update message just if plotWindow object is not null (.?)
                     globalThis.plotWindow?.webContents.send('plot-updated')
@@ -476,8 +614,11 @@ const createTableWindow = (jsonRawData, analysisType) => {
             tmpFile.removeCallback()
 
             if (code == 0) {
-                if (createOrUpdate == 'create')
+                if (createOrUpdate == 'create') {
                     createPlotWindow(800, 600, 'wordcloud', selectedColumn)
+
+                    tableWindow.webContents.send('plot-creation-complete')
+                }
                 else if (createOrUpdate == 'update')
                     // Send the update message just if plotWindow object is not null (.?)
                     globalThis.plotWindow?.webContents.send('plot-updated')
@@ -508,8 +649,11 @@ const createTableWindow = (jsonRawData, analysisType) => {
             tmpFile.removeCallback()
 
             if (code == 0) {
-                if (createOrUpdate == 'create')
+                if (createOrUpdate == 'create') {
                     createPlotWindow(900, 800, 'heatmap-ssgsea', visibleRows)
+                    
+                    tableWindow.webContents.send('plot-creation-complete')
+                }
                 else if (createOrUpdate == 'update')
                     // Send the update message just if plotWindow object is not null (.?)
                     globalThis.plotWindow?.webContents.send('plot-updated')
