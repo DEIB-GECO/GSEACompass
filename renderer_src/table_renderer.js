@@ -560,6 +560,15 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                             table.columns({ selected: true }).deselect()
                             table.rows({ selected: true }).deselect()
                         }
+                    },
+                    {
+                        text: 'Plot help',
+                        name: 'plotGuide',
+                        action: () => {
+                            // Trigger the Bootstrap modal
+                            const helpModal = new bootstrap.Modal(document.getElementById('plotHelpModal'))
+                            helpModal.show()
+                        }
                     }
                 ]
             },
@@ -619,7 +628,7 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
         }
         else {
             table.button(['enrichmentPlot:name']).enable(
-                numSelectedRows > 0 && numSelectedCols > 0)
+                numSelectedCols === 0 && numSelectedRows > 0)
             table.button(['similarityGraph:name']).enable(
                 numSelectedCols === 0 && numSelectedRows > 0)
             table.button(['similarityHeatmap:name']).enable(

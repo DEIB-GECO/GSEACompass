@@ -6,13 +6,11 @@ import matplotlib.pyplot as plt
 from gseapy.plot import GSEAPlot, Heatmap ,TracePlot, DotPlot
 from io import StringIO
 import dill
+import pickle
 import numpy as np
 import seaborn as sns
 from wordcloud import WordCloud
 from typing import Sequence, Optional, List, Tuple, Dict, Union, Any
-import torch
-import torch.nn.functional as F
-from transformers import AutoTokenizer, AutoModel
 import networkx as nx
 import matplotlib.pyplot as plt
 from tqdm.auto import tqdm
@@ -244,6 +242,9 @@ def heatmap_modified(
 
 # Home directory of user running this script
 HOME_DIR = os.path.expanduser("~")
+
+# Directory in which this script is placed
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Read plot type argument passed by the script call
 plot_type = sys.argv[1]
@@ -500,6 +501,15 @@ match plot_type:
         size_y = float(sys.argv[4])
         measurement_unit = sys.argv[5]
 
+        import json
+        import math
+        import os
+        import pickle
+        import numpy as np
+        import matplotlib.cm as cm
+        import matplotlib.colors as mcolors
+        from pyvis.network import Network
+
         # Parse the JSON containing Term, Score, and FDR
         graph_data = json.loads(selected_terms_raw)
         
@@ -511,52 +521,66 @@ match plot_type:
         scores = [item["Score"] for item in graph_data]
         fdrs = [item["FDR"] for item in graph_data]
 
-        # Clean up the terms for the model
-        model_inputs = [term.replace("_", " ").replace(";", " ").replace(",", " ").strip().lower() for term in selected_terms]
-
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        local_model_path = os.path.abspath(os.path.join(current_dir, '..', 'misc_resources', 'SapBERT_model'))
-
-        # Load the model and tokenizer from the folder
-        tokenizer = AutoTokenizer.from_pretrained(local_model_path)
-        model = AutoModel.from_pretrained(local_model_path, use_safetensors=True)
+        # Load the pre-computed embeddings dictionary
+        CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+        embeddings_path = os.path.abspath(os.path.join(CURRENT_DIR, '..', 'misc_resources', 'msigdb_embeddings.pkl'))
         
-        bs = 128 
-        all_embs = []
-        for i in tqdm(np.arange(0, len(model_inputs), bs)):
-            toks = tokenizer(model_inputs[i:i+bs], padding="max_length", max_length=25, truncation=True, return_tensors="pt")
-            cls_rep = model(**toks)[0][:,0,:] 
-            all_embs.append(cls_rep.cpu().detach().numpy())
+        with open(embeddings_path, "rb") as f:
+            precomputed_embs = pickle.load(f)
 
-        all_embs = np.concatenate(all_embs, axis=0)
-        norm_all_embs = F.normalize(torch.tensor(all_embs), p=2, dim=1)
-        similarity_matrix = torch.mm(norm_all_embs, norm_all_embs.transpose(0, 1))
+        # Extract embeddings and safely filter out missing terms
+        term_vectors = []
+        valid_terms = []
+        valid_scores = []
+        valid_fdrs = []
+
+        for i, term in enumerate(selected_terms):
+            if term in precomputed_embs:
+                term_vectors.append(precomputed_embs[term])
+                valid_terms.append(term)
+                valid_scores.append(scores[i])
+                valid_fdrs.append(fdrs[i])
+            else:
+                print(f"Warning: No pre-computed embedding found for {term}. It will be excluded from the graph.")
+
+        if not term_vectors:
+            print("No valid embeddings found for the selected terms.")
+            exit(1)
+
+        # Overwrite variables so the graph only draws valid terms
+        selected_terms = valid_terms
+        scores = valid_scores
+        fdrs = valid_fdrs
+
+        # Calculate similarity matrix using pure Numpy (Dot product = Cosine Similarity)
+        embs_matrix = np.array(term_vectors)
+        similarity_matrix = np.dot(embs_matrix, embs_matrix.T)
         
         # Biological Context Formatting
-        node_sizes = [10 + 5 * (-math.log10(max(f, 1e-5))) for f in fdrs] # Scaled for Pyvis
+        node_sizes = [10 + 8 * (-math.log10(max(f, 1e-5))) for f in fdrs] 
         max_abs_score = max([abs(s) for s in scores] + [1e-5])
         norm = mcolors.TwoSlopeNorm(vmin=-max_abs_score, vcenter=0, vmax=max_abs_score)
         cmap = cm.get_cmap('coolwarm')
-        node_colors = [mcolors.to_hex(cmap(norm(s))) for s in scores] # Pyvis requires HEX
+        node_colors = [mcolors.to_hex(cmap(norm(s))) for s in scores]
 
         # Generate Interactive Graph
         net = Network(height="100vh", width="100%", bgcolor="#ffffff", font_color="black")
         net.repulsion(node_distance=250, central_gravity=0.05, spring_length=200, spring_strength=0.05, damping=0.9)
 
-        # Add Nodes
-        for i in range(len(model_inputs)):
+        # Add Nodes (shape="dot" explicitly forces Pyvis to respect our custom node_sizes)
+        for i in range(len(selected_terms)):
             tooltip = f"{selected_terms[i]}\nNES: {scores[i]:.2f}\nFDR q-val: {fdrs[i]:.4f}"
-            net.add_node(i, label=f"G{i}", title=tooltip, color=node_colors[i], size=node_sizes[i])
+            net.add_node(i, label=f"G{i}", title=tooltip, color=node_colors[i], size=node_sizes[i], shape="dot")
 
-        # Add Edges
-        for i in range(len(model_inputs)):
-            for j in range(i+1, len(model_inputs)):
-                weight = similarity_matrix[i, j].item()
+        # Add Edges (Using hard width parameter for thinner, straight lines)
+        for i in range(len(selected_terms)):
+            for j in range(i+1, len(selected_terms)):
+                weight = float(similarity_matrix[i, j])
                 if weight > 0.1: 
-                    net.add_edge(i, j, width=1.3, weight=weight, title=f"Similarity: {weight:.2f}", color="#cccccc", smooth=False)
+                    net.add_edge(i, j, width=weight*2, weight=weight, title=f"Similarity: {weight:.2f}", color="#cccccc", smooth=False)
 
         net.write_html(PLOT_FILE + ".html")
-        
+
         # Build the dynamic list mapping G-labels to pathways
         term_legend_html = "<div style='max-height: 250px; overflow-y: auto; font-size: 11px; margin-top: 15px; border-top: 1px solid #ccc; padding-top: 10px;'>"
         for i, term in enumerate(selected_terms):
@@ -565,56 +589,85 @@ match plot_type:
         
         with open(PLOT_FILE + ".html", "r") as f:
             html = f.read()
+        
 
         ui_injection = f"""
-        <div style="position: absolute; top: 20px; left: 20px; z-index: 9999; background: rgba(255,255,255,0.95); padding: 15px; border-radius: 8px; border: 1px solid #ccc; font-family: sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            <label for="threshold-slider" style="font-weight: bold; font-size: 14px;">Edge Cosine Similarity Threshold: <span id="threshold-val" style="color: #0048ff;">0.75</span></label><br>
-            <input type="range" min="0" max="1" step="0.01" id="threshold-slider" value="0.75" style="width: 250px; margin-top: 10px;">
-        </div>
-        
-        <div style="position: absolute; top: 20px; right: 20px; z-index: 9999; background: rgba(255,255,255,0.95); padding: 15px; border-radius: 8px; border: 1px solid #ccc; font-family: sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-size: 12px; width: 320px;">
-            <b>Node Color (NES)</b><br>
-            <div style="background: linear-gradient(to right, #3b4cc0, #dddddd, #b40426); width: 100%; height: 15px; border-radius: 3px; margin-top: 5px; margin-bottom: 5px;"></div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 15px;"><span>Down</span><span>Up</span></div>
-            <b>Node Size (FDR q-val)</b><br>
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 5px;">
-                <div style="width: 10px; height: 10px; border-radius: 50%; background: #999;"></div> Not Sig.
-                <div style="width: 25px; height: 25px; border-radius: 50%; background: #999;"></div> Highly Sig.
+            <div style="position: absolute; top: 20px; left: 20px; z-index: 9999; background: rgba(255,255,255,0.95); padding: 15px; border-radius: 8px; border: 1px solid #ccc; font-family: sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <label for="threshold-slider" style="font-weight: bold; font-size: 14px;">Edge Cosine Similarity Threshold: <span id="threshold-val" style="color: #0048ff;">0.75</span></label><br>
+                <input type="range" min="0" max="1" step="0.01" id="threshold-slider" value="0.75" style="width: 250px; margin-top: 10px;"><br>
+                <button id="export-btn" style="margin-top: 15px; width: 100%; padding: 8px; cursor: pointer; background: #0048ff; color: white; border: none; border-radius: 4px; font-weight: bold;">Export as PNG</button>
             </div>
-            {term_legend_html}
-        </div>
+            
+            <div style="position: absolute; top: 20px; right: 20px; z-index: 9999; background: rgba(255,255,255,0.95); padding: 15px; border-radius: 8px; border: 1px solid #ccc; font-family: sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-size: 12px; width: 320px;">
+                <b>Node Color (NES)</b><br>
+                <div style="background: linear-gradient(to right, #3b4cc0, #dddddd, #b40426); width: 100%; height: 15px; border-radius: 3px; margin-top: 5px; margin-bottom: 5px;"></div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;"><span>Down</span><span>Up</span></div>
+                <b>Node Size (FDR q-val)</b><br>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 5px;">
+                    <div style="width: 10px; height: 10px; border-radius: 50%; background: #999;"></div> Not Sig.
+                    <div style="width: 25px; height: 25px; border-radius: 50%; background: #999;"></div> Highly Sig.
+                </div>
+                {term_legend_html}
+            </div>
 
-        <script>
-        document.addEventListener("DOMContentLoaded", function() {{
-            setTimeout(function() {{
-                if (typeof edges !== 'undefined') {{
-                    var slider = document.getElementById('threshold-slider');
-                    var valSpan = document.getElementById('threshold-val');
-                    var allEdges = edges.get(); 
-                    
-                    function updateEdges(thresh) {{
-                        var updates = [];
-                        allEdges.forEach(function(edge) {{
-                            updates.push({{id: edge.id, hidden: edge.weight < thresh}});
+            <script>
+            document.addEventListener("DOMContentLoaded", function() {{
+                setTimeout(function() {{
+                    if (typeof edges !== 'undefined') {{
+                        // Threshold Slider Logic
+                        var slider = document.getElementById('threshold-slider');
+                        var valSpan = document.getElementById('threshold-val');
+                        var allEdges = edges.get(); 
+                        
+                        function updateEdges(thresh) {{
+                            var updates = [];
+                            allEdges.forEach(function(edge) {{
+                                updates.push({{id: edge.id, hidden: edge.weight < thresh}});
+                            }});
+                            edges.update(updates);
+                        }}
+                        
+                        slider.addEventListener('input', function() {{
+                            var val = parseFloat(this.value);
+                            valSpan.innerText = val.toFixed(2);
+                            updateEdges(val);
                         }});
-                        edges.update(updates);
+                        updateEdges(parseFloat(slider.value)); // Initial filter
+
+                        // Canvas Export Logic
+                        document.getElementById('export-btn').addEventListener('click', function() {{
+                            var originalCanvas = document.getElementsByTagName('canvas')[0];
+                            if (originalCanvas) {{
+                                // Create a temporary canvas to hold the white background
+                                var tempCanvas = document.createElement('canvas');
+                                tempCanvas.width = originalCanvas.width;
+                                tempCanvas.height = originalCanvas.height;
+                                var ctx = tempCanvas.getContext('2d');
+
+                                // Fill with solid white
+                                ctx.fillStyle = '#ffffff';
+                                ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+                                // Draw the transparent vis.js canvas on top
+                                ctx.drawImage(originalCanvas, 0, 0);
+
+                                // Export the result
+                                var dataURL = tempCanvas.toDataURL('image/png');
+                                var link = document.createElement('a');
+                                link.download = 'plot.png';
+                                link.href = dataURL;
+                                link.click();
+                            }}
+                        }});
                     }}
-                    
-                    slider.addEventListener('input', function() {{
-                        var val = parseFloat(this.value);
-                        valSpan.innerText = val.toFixed(2);
-                        updateEdges(val);
-                    }});
-                    updateEdges(parseFloat(slider.value)); // Initial filter
-                }}
-            }}, 1500); // Give vis.js time to initialize
-        }});
-        </script>
+                }}, 1500); // Give vis.js time to initialize
+            }});
+            </script>
         """
         html = html.replace("</body>", ui_injection + "</body>")
         with open(PLOT_FILE + ".html", "w") as f:
             f.write(html)
-    
+        
     case "similarity-heatmap":
         selected_terms_raw = sys.argv[2]
         size_x = float(sys.argv[3])
@@ -628,7 +681,7 @@ match plot_type:
             print("Plot sizes cannot exceed 50 inches.")
             exit(1)
             
-       # Parse the JSON containing Term, Score, and FDR
+        # Parse the JSON containing Term, Score, and FDR
         heatmap_data = json.loads(selected_terms_raw)
         
         # Fallback for backward compatibility
@@ -642,24 +695,40 @@ match plot_type:
         # Clean up the terms for the model
         model_inputs = [term.replace("_", " ").replace(";", " ").replace(",", " ").strip().lower() for term in selected_terms]
 
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        local_model_path = os.path.abspath(os.path.join(current_dir, '..', 'misc_resources', 'SapBERT_model'))
+        # Load the pre-computed embeddings dictionary
+        CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+        embeddings_path = os.path.abspath(os.path.join(CURRENT_DIR, '..', 'misc_resources', 'msigdb_embeddings.pkl'))
+        
+        with open(embeddings_path, "rb") as f:
+            precomputed_embs = pickle.load(f)
 
-        # Load the model and tokenizer from the folder
-        tokenizer = AutoTokenizer.from_pretrained(local_model_path)
-        model = AutoModel.from_pretrained(local_model_path, use_safetensors=True)
-        
-        bs = 128 # batch size during inference
-        all_embs = []
-        for i in tqdm(np.arange(0, len(model_inputs), bs)):
-            toks = tokenizer(model_inputs[i:i+bs], padding="max_length", max_length=25, truncation=True, return_tensors="pt")
-            cls_rep = model(**toks)[0][:,0,:] # use CLS representation as the embedding
-            all_embs.append(cls_rep.cpu().detach().numpy())
-            
-        all_embs = np.concatenate(all_embs, axis=0)
-        norm_all_embs = F.normalize(torch.tensor(all_embs), p=2, dim=1)
-        
-        similarity_matrix = torch.mm(norm_all_embs, norm_all_embs.transpose(0, 1)).numpy()
+        # Extract embeddings and safely filter out missing terms
+        term_vectors = []
+        valid_terms = []
+        valid_scores = []
+        valid_fdrs = []
+
+        for i, term in enumerate(selected_terms):
+            if term in precomputed_embs:
+                term_vectors.append(precomputed_embs[term])
+                valid_terms.append(term)
+                valid_scores.append(scores[i])
+                valid_fdrs.append(fdrs[i])
+            else:
+                print(f"Warning: No pre-computed embedding found for {term}. It will be excluded from the graph.")
+
+        if not term_vectors:
+            print("No valid embeddings found for the selected terms.")
+            exit(1)
+
+        # Overwrite variables so the graph only draws valid terms
+        selected_terms = valid_terms
+        scores = valid_scores
+        fdrs = valid_fdrs
+
+        # Calculate similarity matrix using pure Numpy (Dot product = Cosine Similarity)
+        embs_matrix = np.array(term_vectors)
+        similarity_matrix = np.dot(embs_matrix, embs_matrix.T)
         
         labels = {f'G{i}': term for i, term in enumerate(selected_terms)}
         

@@ -81,6 +81,37 @@
 
     </div>
 
+    <div class="modal fade" id="plotHelpModal" tabindex="-1" aria-labelledby="plotHelpModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="plotHelpModalLabel">Information about plots</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6><strong>GSEA and GSEA Preranked</strong></h6>
+                <ul>
+                    <li><strong>Enrichment Plot:</strong> <em>Select 1 or more rows.</em> Running enrichment score for the selected gene set.</li>
+                    <li><strong>Similarity Graph:</strong> <em>Select rows (or none to use all visible).</em> Interactive network graph for semantic similarity between gene set names.</li>
+                    <li><strong>Similarity Heatmap:</strong> <em>Select rows (or none to use all visible).</em> Heatmap of the semantic similarity between gene set names.</li>
+                    <li><strong>Dotplot:</strong> <em>Select 1 numeric column (e.g., NES, FDR) AND select rows (or none to use visible).</em> Dotplot across multiple gene set.</li>
+                    <li><strong>Heatmap (GSEA only):</strong> <em>Select exactly 1 row.</em> Expression heatmap for the lead genes of a specific gene set.</li>
+                    <li><strong>Intersection over Union:</strong> <em>Select 2 or more rows and no column.</em> Overlap of leading genes between different gene sets.</li>
+                    <li><strong>Wordcloud:</strong> <em>Select 1 text column (Term or Lead_genes) AND select rows (or none to use visible).</em> Word cloud highlighting most frequent terms.</li>
+                </ul>
+                <hr>
+                <h6><strong>ssGSEA and GSVA</strong></h6>
+                <ul>
+                    <li><strong>Heatmap:</strong> <em>No rows or columns to be selected.</em> Heatmap of NES (for ssGSEA) or ES (for GSVA) across all samples.</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+            </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 
 </html>
