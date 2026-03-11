@@ -1,12 +1,13 @@
 # GSEACompass 🧭
 
-A minimalistic yet powerful app to run *GSEA*, pre-ranked *GSEA* and do post-analysis elaboration on the results.
+A Mmdern app to run GSEA, pre-ranked GSEA, ssGSEA and GSVA and do post-analysis elaboration on the results.
 
-To know more about how to use GSEACompass and its peculiar features, check out the offical user manual: [gseacompass.gitbook.io](https://gseacompass.gitbook.io/user-manual)
+To know more about how to use GSEACompass, check out the offical user manual: [gseacompass.gitbook.io](https://gseacompass.gitbook.io/user-manual)
 
 ## Outline
 
 - [Frameworks](#frameworks)
+- [Run instructions](#run-instructions)
 - [Build instructions](#build-instructions)
   - [Download](#download)
   - [Dependencies](#run-dependencies)
@@ -15,11 +16,15 @@ To know more about how to use GSEACompass and its peculiar features, check out t
 
 ## Frameworks
 
-This tool is powered by:
+This tool is mostly powered by:
 
 - *GSEApy* on the python backend to run genomic analyses and graphical elaborations
 - *Electron.js* on the desktop frontend
 - *Datatables.js* as a view engine for post-analysis tables
+- *Pyvis* as a view engine for similarity graphs
+
+## Run instructions
+To run GSEACompass, simply download the version required by your OS (Ubuntu-based, Mac, Windows) and double click on it.
 
 ## Build instructions
 
@@ -30,11 +35,6 @@ Download GSEACompass source code
 ### Build from source
 
 Make sure, before running GSEAWrap in a development enviroment, to fulfill these dependencies.
-
-#### Rust
-
-The Rust development environment has to be installed on your machine, since it's compulsory to install and run GSEApy.
-Follow this [link](https://www.rust-lang.org/tools/install) for the official instructions to download and install it.
 
 #### Python
 
@@ -55,7 +55,7 @@ sudo dnf install libquadmath libquadmath-devel
 ```
 
 #### N.B. for Windows users: 
-Make sure Python and Rust are in the PATH environmental variable.
+Make sure that Python is in the PATH environment variable.
 
 #### Python libraries
 
@@ -65,7 +65,7 @@ Once Python and pip are installed, open the directory in which you have unzipped
 pip install -r requirements.txt
 ```
 
-This will install all python-based dependencies needed to run the app.
+This will install all the python-based dependencies needed to run the app.
 
 ### Build dependencies
 
@@ -92,5 +92,3 @@ To build and run the application just run the following command, make sure to be
 ```bash
 npm start run
 ```
-
-In order to run the app, be sure to have installed the run dependencies too (see [up above](#run-dependencies)).
