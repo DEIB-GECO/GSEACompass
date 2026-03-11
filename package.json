@@ -19,7 +19,9 @@
                 "ignore": [
                     "venv",
                     "test_data",
-                    "README.md"
+                    "README.md",
+                    "^/build",
+                    "^/backend_src/.*\\.py$"
                 ]
             },
             "makers": [

@@ -128,28 +128,26 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                     action: () => {
                         showLoading()
 
-                        // Fetch the selected column
-                        const selectedColumn = table.columns({ selected: true }).titles()[0]
-
                         // Fetch the selected rows
                         const selectedRows = table.rows({ selected: true }).data()
 
                         // Fetch the visible rows
                         const visibleRows = table.rows({ search: 'applied' }).data()
 
-                        let rows = ''
-                        let selectedTerms = []
+                        let rows = selectedRows.length === 0 ? visibleRows : selectedRows
+                        
+                        // Safely create an array of objects
+                        let heatmapData = []
+                        for (let i = 0; i < rows.length; i++) {
+                            heatmapData.push({
+                                Term: rows[i].Term,
+                                Score: parseFloat(rows[i].NES || 0),
+                                FDR: parseFloat(rows[i]['FDR q-val'])
+                            })
+                        }
 
-                        if (selectedRows.length == 0)
-                            rows = visibleRows
-                        else
-                            rows = selectedRows
-
-                        for (let i = 0; i < rows.length; i++)
-                            selectedTerms[i] = rows[i][selectedColumn]
-
-                        // Send the selected terms in JSON format
-                        window.electronAPI.requestSimilarityHeatmap(JSON.stringify(selectedTerms))
+                        // Send the data
+                        window.electronAPI.requestSimilarityHeatmap(JSON.stringify(heatmapData))
                     }
                 },
                 {
@@ -333,7 +331,7 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
 
                         let rows = selectedRows.length === 0 ? visibleRows : selectedRows
                         
-                        // Create an array of objects to hold the biological context
+                        // Safely create an array of objects
                         let heatmapData = []
                         for (let i = 0; i < rows.length; i++) {
                             heatmapData.push({
@@ -343,7 +341,7 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                             })
                         }
 
-                        // Send the selected terms in JSON format
+                        // Send the data
                         window.electronAPI.requestSimilarityHeatmap(JSON.stringify(heatmapData))
                     }
                 },
@@ -548,6 +546,15 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                 // Drop down menu of buttons to generate plots
                 buttons: [
                     {
+                        text: 'Plot help',
+                        name: 'plotGuide',
+                        action: () => {
+                            // Trigger the Bootstrap modal
+                            const helpModal = new bootstrap.Modal(document.getElementById('plotHelpModal'))
+                            helpModal.show()
+                        }
+                    },
+                    {
                         extend: 'collection',
                         text: 'Generate plot',
                         buttons: plotButtons
@@ -560,16 +567,8 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                             table.columns({ selected: true }).deselect()
                             table.rows({ selected: true }).deselect()
                         }
-                    },
-                    {
-                        text: 'Plot help',
-                        name: 'plotGuide',
-                        action: () => {
-                            // Trigger the Bootstrap modal
-                            const helpModal = new bootstrap.Modal(document.getElementById('plotHelpModal'))
-                            helpModal.show()
-                        }
                     }
+                    
                 ]
             },
             bottomStart: {

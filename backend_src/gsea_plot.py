@@ -2,6 +2,7 @@ import sys
 import os.path
 import warnings
 import pandas as pd
+import matplotlib
 import matplotlib.pyplot as plt
 from gseapy.plot import GSEAPlot, Heatmap ,TracePlot, DotPlot
 from io import StringIO
@@ -521,9 +522,14 @@ match plot_type:
         scores = [item["Score"] for item in graph_data]
         fdrs = [item["FDR"] for item in graph_data]
 
-        # Load the pre-computed embeddings dictionary
-        CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-        embeddings_path = os.path.abspath(os.path.join(CURRENT_DIR, '..', 'misc_resources', 'msigdb_embeddings.pkl'))
+        if getattr(sys, 'frozen', False):
+            # Running as a compiled executable (located in backend_src/dist/backend/)
+            exe_dir = os.path.dirname(sys.executable)
+            embeddings_path = os.path.abspath(os.path.join(exe_dir, '..', '..', '..', 'misc_resources', 'msigdb_embeddings.pkl'))
+        else:
+            # Running as a normal script (located in backend_src/)
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            embeddings_path = os.path.abspath(os.path.join(script_dir, '..', 'misc_resources', 'msigdb_embeddings.pkl'))
         
         with open(embeddings_path, "rb") as f:
             precomputed_embs = pickle.load(f)
@@ -560,7 +566,7 @@ match plot_type:
         node_sizes = [10 + 8 * (-math.log10(max(f, 1e-5))) for f in fdrs] 
         max_abs_score = max([abs(s) for s in scores] + [1e-5])
         norm = mcolors.TwoSlopeNorm(vmin=-max_abs_score, vcenter=0, vmax=max_abs_score)
-        cmap = cm.get_cmap('coolwarm')
+        cmap = matplotlib.colormaps['coolwarm']        
         node_colors = [mcolors.to_hex(cmap(norm(s))) for s in scores]
 
         # Generate Interactive Graph
@@ -682,11 +688,19 @@ match plot_type:
             exit(1)
             
         # Parse the JSON containing Term, Score, and FDR
-        heatmap_data = json.loads(selected_terms_raw)
+        raw_data = json.loads(selected_terms_raw)
+        heatmap_data = []
         
-        # Fallback for backward compatibility
-        if len(heatmap_data) > 0 and isinstance(heatmap_data[0], str):
-            heatmap_data = [{"Term": t, "Score": 0, "FDR": 1.0} for t in heatmap_data]
+        # Ignores nulls/garbage from the UI
+        for item in raw_data:
+            if isinstance(item, dict) and "Term" in item:
+                heatmap_data.append(item)
+            elif isinstance(item, str):
+                heatmap_data.append({"Term": item, "Score": 0, "FDR": 1.0})
+                
+        if not heatmap_data:
+            print("Error: No valid gene set data was received from the UI.", file=sys.stderr)
+            exit(1)
 
         selected_terms = [item["Term"] for item in heatmap_data]
         scores = [item["Score"] for item in heatmap_data]
@@ -695,14 +709,19 @@ match plot_type:
         # Clean up the terms for the model
         model_inputs = [term.replace("_", " ").replace(";", " ").replace(",", " ").strip().lower() for term in selected_terms]
 
-        # Load the pre-computed embeddings dictionary
-        CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-        embeddings_path = os.path.abspath(os.path.join(CURRENT_DIR, '..', 'misc_resources', 'msigdb_embeddings.pkl'))
+        if getattr(sys, 'frozen', False):
+            # Running as a compiled executable (backend_src/dist/backend/)
+            exe_dir = os.path.dirname(sys.executable)
+            embeddings_path = os.path.abspath(os.path.join(exe_dir, '..', '..', '..', 'misc_resources', 'msigdb_embeddings.pkl'))
+        else:
+            # Running as a normal script (backend_src/)
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            embeddings_path = os.path.abspath(os.path.join(script_dir, '..', 'misc_resources', 'msigdb_embeddings.pkl'))
         
         with open(embeddings_path, "rb") as f:
             precomputed_embs = pickle.load(f)
 
-        # Extract embeddings and safely filter out missing terms
+        # Extract embeddings and filter out missing terms
         term_vectors = []
         valid_terms = []
         valid_scores = []
@@ -762,7 +781,7 @@ match plot_type:
         
         data = pd.read_json(StringIO(visible_rows))
         
-        # Pivot on ES instead of NES
+        # Pivot on ES
         data = data.pivot(index="Term", columns="Name", values="ES")
 
         fig, ax = plt.subplots(figsize=(converted_size_x, converted_size_y))
