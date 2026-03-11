@@ -8,4 +8,4 @@ gsea_run.pkl
 out/
 /backend_src/build
 /backend_src/dist
-/backend_src/*.spec
+/test_data
