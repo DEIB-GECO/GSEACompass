@@ -24,7 +24,7 @@ This tool is mostly powered by:
 - *Pyvis* as a view engine for similarity graphs
 
 ## Run instructions
-To run GSEACompass, simply download the version required by your OS (Ubuntu-based, Mac, Windows) and double click on it.
+To run GSEACompass, simply download the package required by your OS (Ubuntu-based, Mac, Windows) from the [*Releases*](https://github.com/DEIB-GECO/GSEACompass/releases) page on the Github repository and double click on it.
 
 ## Build instructions
 
