@@ -59,7 +59,7 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
             tableTitle.innerText = 'GSEA results'
 
             columnsList = [
-                { data: 'Select', title: '' },
+                { data: null, title: '' },
                 { data: 'Term', title: 'Term' },
                 { data: 'ES', title: 'ES' },
                 { data: 'NES', title: 'NES' },
@@ -254,7 +254,7 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
             tableTitle.innerText = 'GSEA preranked results'
 
             columnsList = [
-                { data: 'Select', title: '' },
+                { data: null, title: '' },
                 { data: 'Term', title: 'Term' },
                 { data: 'ES', title: 'ES' },
                 { data: 'NES', title: 'NES' },
@@ -435,7 +435,7 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
             tableTitle.innerText = 'ssGSEA results'
 
             columnsList = [
-                { data: 'Select', title: '' },
+                { data: null, title: '' },
                 { data: 'Name', title: 'Name' },
                 { data: 'Term', title: 'Term' },
                 { data: 'ES', title: 'ES' },
@@ -476,7 +476,7 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
             tableTitle.innerText = 'GSVA results'
 
             columnsList = [
-                { data: 'Select', title: '' },
+                { data: null, title: '' },
                 { data: 'Name', title: 'Name' },
                 { data: 'Term', title: 'Term' },
                 { data: 'ES', title: 'ES' } // Removed NES
@@ -560,6 +560,23 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                         buttons: plotButtons
                     },
                     {
+                        text: 'Select all',
+                        name: 'selectAll',
+                        action: () => {
+                            const currentPageLen = table.page.len()
+                            table.page.len(-1).draw(false)
+                            table.rows({ search: 'applied' }).select()
+                            table.page.len(currentPageLen).draw(false)
+                        }
+                    },
+                    {
+                        text: 'Select visible',
+                        extend: 'selectAll',
+                        selectorModifier: function () {
+                            return { page: 'current' }
+                        }
+                    },
+                    {
                         text: 'Deselect all',
                         name: 'deselectAll',
                         enabled: false,
@@ -574,29 +591,61 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
             bottomStart: {
                 buttons: [
                     {
+                        text: 'Export selected',
                         extend: 'collection',
-                        text: 'Export',
-                        name: 'export',
                         buttons: [
                             {
                                 extend: 'copy',
                                 exportOptions: {
                                     columns: exportColSelector,
-                                    orthogonal: 'export'
+                                    orthogonal: 'export',
+                                    rows: { selected: true, page: 'all' } 
                                 }
                             },
                             {
                                 extend: 'csv',
                                 exportOptions: {
                                     columns: exportColSelector,
-                                    orthogonal: 'export'
+                                    orthogonal: 'export',
+                                    rows: { selected: true, page: 'all' }
                                 }
                             },
                             {
                                 extend: 'excel',
                                 exportOptions: {
                                     columns: exportColSelector,
-                                    orthogonal: 'export'
+                                    orthogonal: 'export',
+                                    rows: { selected: true, page: 'all' }
+                                }
+                            },
+                        ]
+                    },
+                    {
+                        text: 'Export all',
+                        extend: 'collection',
+                        buttons: [
+                            {
+                                extend: 'copy',
+                                exportOptions: {
+                                    columns: exportColSelector,
+                                    orthogonal: 'export',
+                                    rows: { page: 'all', search: 'none' }
+                                }
+                            },
+                            {
+                                extend: 'csv',
+                                exportOptions: {
+                                    columns: exportColSelector,
+                                    orthogonal: 'export',
+                                    rows: { page: 'all', search: 'none' }
+                                }
+                            },
+                            {
+                                extend: 'excel',
+                                exportOptions: {
+                                    columns: exportColSelector,
+                                    orthogonal: 'export',
+                                    rows: { page: 'all', search: 'none' }
                                 }
                             }
                         ]
@@ -609,12 +658,15 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
 
     // Every time a rows/column has been selected or deselected
     table.on('select deselect', () => {
+        const numAllRows = table.rows().count()
         const numSelectedRows = table.rows({ selected: true }).count()
+        const numVisibleRows = table.rows({ search: 'applied' }).count()
         const selectedColumns = table.columns({ selected: true })
         const numSelectedCols = selectedColumns.count()
 
         // Show or hide each top bar button if a specific condition is true
         table.button(['deselectAll:name']).enable(numSelectedRows > 0 || numSelectedCols > 0)
+        table.button(['selectAll:name']).enable(numSelectedRows < numAllRows)
 
         // Only update these buttons if they were actually rendered
         if (analysisType === 'ssgsea') {

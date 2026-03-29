@@ -34,7 +34,24 @@ if (not gene_sets_path.endswith(".gmt")):
    
 # Try to parse the ranked list 
 try:
-    rnk_list = pd.read_csv(rnk_list_path, header=None, index_col=0, sep="\t")
+    # Check if the ranked list has a header
+    with open(rnk_list_path, 'r') as f:
+        first_line = f.readline().strip()
+    
+    has_header = False
+    if first_line:
+        parts = first_line.split('\t')
+        # If the second column is not a number, it's a header
+        if len(parts) > 1:
+            try:
+                float(parts[1])
+            except ValueError:
+                has_header = True
+
+    if has_header:
+        rnk_list = pd.read_csv(rnk_list_path, header=0, index_col=0, sep="\t")
+    else:
+        rnk_list = pd.read_csv(rnk_list_path, header=None, index_col=0, sep="\t")
 except Exception:
     errorAndExit("The ranked list file is malformed and cannot be intepreted.")
     
@@ -95,8 +112,14 @@ else:
         errorAndExit("The chip platform file is malformed and cannot be intepreted.")
         
     # Check if any cell (index included) of the chip platform file is missing
-    if (chip.iloc[:, 0].isnull().any() or chip.index.hasnans):
-        errorAndExit("The chip platform file has some missing values and cannot be used.")
+    if (chip.iloc[:, 0].isnull().any()):
+        errorAndExit("The chip platform file has some missing values and cannot be used.\n" \
+                     "The rows affected are these:\n" \
+                    f"{chip.iloc[:, :1].loc[chip.iloc[:, 0].isnull().to_list()].to_string(header=False)}")
+    # if (chip.index.hasnans):
+    #     errorAndExit("The chip platform file has some missing values and cannot be used.\n" \
+    #                  "The rows affected are these:\n" \
+    #                 f"{chip.iloc[:, :1].loc[chip.index.isna()].to_string(header=False)}")
         
     # Convert the ranked list genes in the chip platform notation
     rnk_chosen = rnk_list.join(chip)[["Gene Symbol", 1]].reset_index(drop=True).dropna()

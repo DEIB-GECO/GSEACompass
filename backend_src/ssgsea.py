@@ -32,10 +32,28 @@ if (not gene_sets_path.endswith(".gmt")):
 
 # Try to parse the expression set file
 try:
-    if dataset_path.endswith(".rnk"):
-        dataset = pd.read_csv(dataset_path, header=None, index_col=0, sep="\t")
-    else:
-        dataset = pd.read_csv(dataset_path, header=2, index_col=0, sep="\t")
+	if dataset_path.endswith(".rnk"):
+		# Check if the ranked list has a header 
+		with open(dataset_path, 'r') as f:
+			first_line = f.readline().strip()
+
+		has_header = False
+		if first_line:
+			parts = first_line.split('\t')
+		
+  		# If the second column is not a number, it's a header
+		if len(parts) > 1:
+			try:
+				float(parts[1])
+			except ValueError:
+				has_header = True
+
+		if has_header:
+			dataset = pd.read_csv(dataset_path, skiprows = 1, header = None, index_col=0, sep="\t")
+		else:
+			dataset = pd.read_csv(dataset_path, header=None, index_col=0, sep="\t")
+	else:
+		dataset = pd.read_csv(dataset_path, header=2, index_col=0, sep="\t")
 except Exception:
     errorAndExit("The expression set file is malformed and cannot be intepreted.")
 
@@ -66,7 +84,6 @@ if min_gene_set > max_gene_set:
 try:
 	res = gp.ssgsea(data=dataset,
 					gene_sets=gene_sets_path,
-					outdir="gseapy_ssgsea_output",
 					min_size=min_gene_set,
 					max_size=max_gene_set,
 	)

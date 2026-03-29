@@ -37,7 +37,13 @@ if (not phenotype_labels_path.endswith(".cls")):
 
 # Try to parse the expression set file
 try:
-    expression_set = pd.read_csv(expression_set_path, header=2, index_col=0, sep="\t")
+    with open(expression_set_path, 'r') as f:
+        first_line = f.readline().strip()
+    
+    if first_line == '#1.2':
+        expression_set = pd.read_csv(expression_set_path, header=2, index_col=0, sep="\t")
+    else:
+        expression_set = pd.read_csv(expression_set_path, header=0, index_col=0, sep="\t")
 except Exception:
     errorAndExit("The expression set file is malformed and cannot be intepreted.")
 

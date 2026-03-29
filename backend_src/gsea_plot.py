@@ -563,7 +563,7 @@ match plot_type:
         similarity_matrix = np.dot(embs_matrix, embs_matrix.T)
         
         # Biological Context Formatting
-        node_sizes = [10 + 8 * (-math.log10(max(f, 1e-5))) for f in fdrs] 
+        node_sizes = [10 + 4 * (-math.log10(max(f, 1e-5))) for f in fdrs] 
         max_abs_score = max([abs(s) for s in scores] + [1e-5])
         norm = mcolors.TwoSlopeNorm(vmin=-max_abs_score, vcenter=0, vmax=max_abs_score)
         cmap = matplotlib.colormaps['coolwarm']        

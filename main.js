@@ -103,10 +103,13 @@ const localPath = (type, file) => {
 // Utility function that spawns a python process either using 
 // packaged executables or the local python environment, based on the app environment
 const spawnPythonProcess = (scriptName, args) => {
-    if (app.isPackaged)
+    if (app.isPackaged) {
         return spawn(localPath('pythonBin', scriptName), args)
-    else
-        return spawn('python', [localPath('python', scriptName), ...args])
+    } else {
+        // Automatically use 'python3' on macOS/Linux, and 'python' on Windows
+        const pythonCommand = process.platform === 'win32' ? 'python' : 'python3'
+        return spawn(pythonCommand, [localPath('python', scriptName), ...args])
+    }
 }
 
 // Setup the logger
