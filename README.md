@@ -1,8 +1,8 @@
 # GSEACompass 🧭
 
-A Mmdern app to run GSEA, pre-ranked GSEA, ssGSEA and GSVA and do post-analysis elaboration on the results.
+A modern app to run GSEA, pre-ranked GSEA, ssGSEA and GSVA and do post-analysis elaboration on the results.
 
-To know more about how to use GSEACompass, check out the offical user manual: [gseacompass.gitbook.io](https://gseacompass.gitbook.io/user-manual)
+To know more about how to use GSEACompass, check out the official user manual: [gseacompass.gitbook.io](https://gseacompass.gitbook.io/user-manual)
 
 ## Outline
 
@@ -31,6 +31,7 @@ This tool is mostly powered by:
 - *Pyvis* as a view engine for similarity graphs
 
 ## Run instructions
+
 To run GSEACompass, simply download the package required by your OS (Ubuntu-based, Mac, Windows) from the [*Releases*](https://github.com/DEIB-GECO/GSEACompass/releases) page and double click on it.
 
 ## Build instructions
@@ -73,19 +74,27 @@ npm install
 ```
 
 #### System
+
 The follow system dependencies are required, install only those regarding your operating system:
 
 ##### Ubuntu-based
+
 Run the following command if your OS is Ubuntu or Ubuntu-based:
+
 ```bash
 sudo apt install python3-devel
 ```
+
 ##### Fedora/RHEL
+
 Run the following command if your OS is Fedora or similar:
+
 ```bash
 sudo dnf install libquadmath libquadmath-devel
 ```
-##### Windows 
+
+##### Windows
+
 Make sure that Python is in the PATH environment variable.
 
 ### Build and run
