@@ -46,6 +46,12 @@
                             "icon": "icons/compass_1024px.png"
                         }
                     }
+                },
+                {
+                    "name": "@electron-forge/maker-squirrel",
+                    "config": {
+                        "name": "gseacompass"
+                    }
                 }
             ]
         }
