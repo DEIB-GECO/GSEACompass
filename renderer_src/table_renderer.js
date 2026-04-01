@@ -450,22 +450,14 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                     action: () => {
                         showLoading()
 
-                        // Fetch the visible rows
-                        const visibleRows = table.rows({ search: 'applied' }).data()
+                        const selectedRowsRaw = table.rows({ selected: true }).data()
 
-                        let rows = ''
+                        const selectedRowsPayload = []
+                        for (let i = 0; i < selectedRowsRaw.length; i++)
+                            selectedRowsPayload[i] = { Name: selectedRowsRaw[i].Name, Term: selectedRowsRaw[i].Term, ES: selectedRowsRaw[i].ES, NES: selectedRowsRaw[i].NES }
 
-                        if (visibleRows.length == 0)
-                            rows = table.rows().data()
-                        else
-                            rows = visibleRows
-
-                        selectedRows = []
-                        for (let i = 0; i < rows.length; i++)
-                            selectedRows[i] = { Name: rows[i].Name, Term: rows[i].Term, ES: rows[i].ES, NES: rows[i].NES }
-
-                        // Send the visible rows in JSON format
-                        window.electronAPI.requestHeatmapSSGSEA(JSON.stringify(selectedRows))
+                        // Send the chosen rows
+                        window.electronAPI.requestHeatmapSSGSEA(JSON.stringify(selectedRowsPayload))
                     }
                 }
             ]
@@ -490,16 +482,15 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                     action: () => {
                         showLoading()
 
-                        const visibleRows = table.rows({ search: 'applied' }).data()
-                        let rows = visibleRows.length == 0 ? table.rows().data() : visibleRows
+                        const selectedRowsRaw = table.rows({ selected: true }).data()
 
-                        selectedRows = []
-                        for (let i = 0; i < rows.length; i++)
+                        const selectedRowsPayload = []
+                        for (let i = 0; i < selectedRowsRaw.length; i++)
                             // Extract only Name, Term, and ES
-                            selectedRows[i] = { Name: rows[i].Name, Term: rows[i].Term, ES: rows[i].ES } 
+                            selectedRowsPayload[i] = { Name: selectedRowsRaw[i].Name, Term: selectedRowsRaw[i].Term, ES: selectedRowsRaw[i].ES }
 
-                        // Send to a new GSVA-specific heatmap IPC route
-                        window.electronAPI.requestHeatmapGSVA(JSON.stringify(selectedRows))
+                        // Send the chosen rows
+                        window.electronAPI.requestHeatmapGSVA(JSON.stringify(selectedRowsPayload))
                     }
                 }
             ]
@@ -565,15 +556,25 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                         action: () => {
                             const currentPageLen = table.page.len()
                             table.page.len(-1).draw(false)
-                            table.rows({ search: 'applied' }).select()
+                            table.rows().select()
                             table.page.len(currentPageLen).draw(false)
                         }
                     },
                     {
                         text: 'Select visible',
                         extend: 'selectAll',
-                        selectorModifier: function () {
+                        selectorModifier: () => {
                             return { page: 'current' }
+                        }
+                    },
+                    {
+                        text: 'Select matched',
+                        name: 'selectMatched',
+                        action: () => {
+                            const currentPageLen = table.page.len()
+                            table.page.len(-1).draw(false)
+                            table.rows({ search: 'applied' }).select()
+                            table.page.len(currentPageLen).draw(false)
                         }
                     },
                     {
@@ -656,6 +657,22 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
         }
     })
 
+    // On search bar input or filter input (FDR q-val and NOM p-val)
+    // Show or hide the "Select matched" button
+    table.on('search.fixed.dt', () => {
+        const maxFDR = document.querySelector('#maxFDR').value.trim()
+        const maxNOM = document.querySelector('#maxNOM').value.trim()
+        const globalSearch = table.search().trim()
+
+        table.button(['selectMatched:name']).enable(globalSearch !== '' || maxFDR !== '' || maxNOM !== '')
+
+        const numSelectedRows = table.rows({ selected: true }).count()
+        const numAllRows = table.rows().count()
+        
+        table.button(['deselectAll:name']).enable(numSelectedRows > 0 || table.columns({ selected: true }).count() > 0)
+        table.button(['selectAll:name']).enable(numSelectedRows < numAllRows)
+    })
+
     // Every time a rows/column has been selected or deselected
     table.on('select deselect', () => {
         const numAllRows = table.rows().count()
@@ -670,12 +687,10 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
 
         // Only update these buttons if they were actually rendered
         if (analysisType === 'ssgsea') {
-            table.button(['heatmapSSGSEA:name']).enable(
-                numSelectedCols === 0 && numSelectedRows === 0)
+            table.button(['heatmapSSGSEA:name']).enable(numSelectedCols === 0 && numSelectedRows > 0)
         }
         else if (analysisType === 'gsva') {
-            table.button(['heatmapGSVA:name']).enable(
-                numSelectedCols === 0 && numSelectedRows === 0)
+            table.button(['heatmapGSVA:name']).enable(numSelectedCols === 0 && numSelectedRows > 0)
         }
         else {
             table.button(['enrichmentPlot:name']).enable(

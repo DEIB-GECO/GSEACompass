@@ -487,15 +487,47 @@ match plot_type:
         # Make data as table Term versus Name, with NES values as values
         data = data.pivot(index="Term", columns="Name", values="NES")
 
-        # Plot heatmap without gseapy, on NES values of the visible rows
+        # Use diverging red-blue colormap centered on 0
         fig, ax = plt.subplots(figsize=(converted_size_x, converted_size_y))
-        sns.heatmap(data, cmap="YlGnBu", ax=ax, linewidths=0.5, linecolor='lightgrey')
+        max_abs = np.nanmax(np.abs(data.values)) if data.size > 0 else 1.0
+        sns.heatmap(data, cmap="RdBu_r", vmin=-max_abs, vmax=max_abs, center=0, ax=ax, linewidths=0.5, linecolor='lightgrey')
         ax.set_title("ssGSEA NES Heatmap", fontsize=16)
         
         # Save the figure as an images with several extensions
         for ext in plot_extensions:
             fig.savefig(PLOT_FILE + ext, bbox_inches='tight')
+
+    case "heatmap-gsva":
+        visible_rows_file_path = sys.argv[2]
+        size_x = float(sys.argv[3])
+        size_y = float(sys.argv[4])
+        measurement_unit = sys.argv[5]
+        
+        converted_size_x = convert_to_inches(measurement_unit, size_x)
+        converted_size_y = convert_to_inches(measurement_unit, size_y)
+        
+        if (converted_size_x > 50 or converted_size_y > 50):
+            print("Plot sizes cannot exceed 50 inches.")
+            exit(1)
             
+        file = open(visible_rows_file_path, "r")
+        visible_rows = file.read()
+        file.close()
+        
+        data = pd.read_json(StringIO(visible_rows))
+        
+        # Pivot on ES
+        data = data.pivot(index="Term", columns="Name", values="ES")
+
+        # Use diverging red-blue colormap centered on 0
+        fig, ax = plt.subplots(figsize=(converted_size_x, converted_size_y))
+        max_abs = np.nanmax(np.abs(data.values)) if data.size > 0 else 1.0
+        sns.heatmap(data, cmap="RdBu_r", vmin=-max_abs, vmax=max_abs, center=0, ax=ax, linewidths=0.5, linecolor='lightgrey')
+        ax.set_title("GSVA ES Heatmap", fontsize=16)
+        
+        for ext in plot_extensions:
+            fig.savefig(PLOT_FILE + ext, bbox_inches='tight')            
+
     case "similarity-graph":
         selected_terms_raw = sys.argv[2]
         size_x = float(sys.argv[3])        
@@ -569,6 +601,16 @@ match plot_type:
         cmap = matplotlib.colormaps['coolwarm']        
         node_colors = [mcolors.to_hex(cmap(norm(s))) for s in scores]
 
+        # Colors for the extremes of the NES colorbar
+        neg_color = mcolors.to_hex(cmap(norm(-max_abs_score)))
+        pos_color = mcolors.to_hex(cmap(norm(max_abs_score)))
+
+        # FDR / node-size extremes for legend
+        min_fdr = min(fdrs)
+        max_fdr = max(fdrs)
+        size_min = int(round(min(node_sizes)))
+        size_max = int(round(max(node_sizes)))
+
         # Generate Interactive Graph
         net = Network(height="100vh", width="100%", bgcolor="#ffffff", font_color="black")
         net.repulsion(node_distance=250, central_gravity=0.05, spring_length=200, spring_strength=0.05, damping=0.9)
@@ -595,23 +637,32 @@ match plot_type:
         
         with open(PLOT_FILE + ".html", "r") as f:
             html = f.read()
-        
 
         ui_injection = f"""
             <div style="position: absolute; top: 20px; left: 20px; z-index: 9999; background: rgba(255,255,255,0.95); padding: 15px; border-radius: 8px; border: 1px solid #ccc; font-family: sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                <label for="threshold-slider" style="font-weight: bold; font-size: 14px;">Edge Cosine Similarity Threshold: <span id="threshold-val" style="color: #0048ff;">0.75</span></label><br>
+                <label for="threshold-slider" style="font-weight: bold; font-size: 14px;">Similarity Threshold: <span id="threshold-val" style="color: #0048ff;">0.75</span></label><br>
                 <input type="range" min="0" max="1" step="0.01" id="threshold-slider" value="0.75" style="width: 250px; margin-top: 10px;"><br>
                 <button id="export-btn" style="margin-top: 15px; width: 100%; padding: 8px; cursor: pointer; background: #0048ff; color: white; border: none; border-radius: 4px; font-weight: bold;">Export as PNG</button>
             </div>
             
             <div style="position: absolute; top: 20px; right: 20px; z-index: 9999; background: rgba(255,255,255,0.95); padding: 15px; border-radius: 8px; border: 1px solid #ccc; font-family: sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-size: 12px; width: 320px;">
-                <b>Node Color (NES)</b><br>
-                <div style="background: linear-gradient(to right, #3b4cc0, #dddddd, #b40426); width: 100%; height: 15px; border-radius: 3px; margin-top: 5px; margin-bottom: 5px;"></div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;"><span>Down</span><span>Up</span></div>
-                <b>Node Size (FDR q-val)</b><br>
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 5px;">
-                    <div style="width: 10px; height: 10px; border-radius: 50%; background: #999;"></div> Not Sig.
-                    <div style="width: 25px; height: 25px; border-radius: 50%; background: #999;"></div> Highly Sig.
+                <b>NES</b><br>
+                <div style="background: linear-gradient(to right, {neg_color}, #dddddd, {pos_color}); width: 100%; height: 15px; border-radius: 3px; margin-top: 5px; margin-bottom: 5px;"></div>
+                <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:12px;">
+                    <span style="color:{neg_color};">-{max_abs_score:.2f}</span>
+                    <span style="color:#666;">0</span>
+                    <span style="color:{pos_color};">+{max_abs_score:.2f}</span>
+                </div>
+                <b>FDR q-value</b><br>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px; margin-bottom: 8px;">
+                    <div style="display:flex; align-items:center;">
+                        <div style="width: {size_min}px; height: {size_min}px; border-radius: 50%; background: #999; display:inline-block; margin-right:8px;"></div>
+                        <div style="font-size:11px;">{max_fdr:.4f}</div>
+                    </div>
+                    <div style="display:flex; align-items:center;">
+                        <div style="width: {size_max}px; height: {size_max}px; border-radius: 50%; background: #999; display:inline-block; margin-right:8px;"></div>
+                        <div style="font-size:11px;">{min_fdr:.4f}</div>
+                    </div>
                 </div>
                 {term_legend_html}
             </div>
@@ -669,7 +720,8 @@ match plot_type:
                 }}, 1500); // Give vis.js time to initialize
             }});
             </script>
-        """
+                        """
+
         html = html.replace("</body>", ui_injection + "</body>")
         with open(PLOT_FILE + ".html", "w") as f:
             f.write(html)
@@ -761,36 +813,7 @@ match plot_type:
         # Save the figure as an images with several extensions
         for ext in plot_extensions:
             plt.savefig(PLOT_FILE + ext, bbox_inches='tight')
-            
-    case "heatmap-gsva":
-        visible_rows_file_path = sys.argv[2]
-        size_x = float(sys.argv[3])
-        size_y = float(sys.argv[4])
-        measurement_unit = sys.argv[5]
-        
-        converted_size_x = convert_to_inches(measurement_unit, size_x)
-        converted_size_y = convert_to_inches(measurement_unit, size_y)
-        
-        if (converted_size_x > 50 or converted_size_y > 50):
-            print("Plot sizes cannot exceed 50 inches.")
-            exit(1)
-            
-        file = open(visible_rows_file_path, "r")
-        visible_rows = file.read()
-        file.close()
-        
-        data = pd.read_json(StringIO(visible_rows))
-        
-        # Pivot on ES
-        data = data.pivot(index="Term", columns="Name", values="ES")
-
-        fig, ax = plt.subplots(figsize=(converted_size_x, converted_size_y))
-        sns.heatmap(data, cmap="YlGnBu", ax=ax, linewidths=0.5, linecolor='lightgrey')
-        ax.set_title("GSVA ES Heatmap", fontsize=16)
-        
-        for ext in plot_extensions:
-            fig.savefig(PLOT_FILE + ext, bbox_inches='tight')
-            
+       
     case _:
         print("The requested plot doesn't exist", file=sys.stderr)
         exit(1)
