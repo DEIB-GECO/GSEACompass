@@ -249,7 +249,9 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
             ]
 
             ellipsisColumnsIdx = [1, 9]
+
             break
+
         case 'gsea_preranked':
             tableTitle.innerText = 'GSEA preranked results'
 
@@ -430,7 +432,9 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
             ]
 
             ellipsisColumnsIdx = [1, 9]
+
             break
+
         case 'ssgsea':
             tableTitle.innerText = 'ssGSEA results'
 
@@ -446,7 +450,7 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                 {
                     text: 'Heatmap',
                     name: 'heatmapSSGSEA',
-                    enabled: true,
+                    enabled: false,
                     action: () => {
                         showLoading()
 
@@ -463,7 +467,9 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
             ]
 
             ellipsisColumnsIdx = [1, 2]
+
             break
+
         case 'gsva':
             tableTitle.innerText = 'GSVA results'
 
@@ -471,14 +477,14 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
                 { data: null, title: '' },
                 { data: 'Name', title: 'Name' },
                 { data: 'Term', title: 'Term' },
-                { data: 'ES', title: 'ES' } // Removed NES
+                { data: 'ES', title: 'ES' }
             ]
 
             plotButtons = [
                 {
                     text: 'Heatmap',
                     name: 'heatmapGSVA',
-                    enabled: true,
+                    enabled: false,
                     action: () => {
                         showLoading()
 
@@ -496,6 +502,7 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
             ]
 
             ellipsisColumnsIdx = [1, 2]
+
             break
     }
 
@@ -666,20 +673,19 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
 
         table.button(['selectMatched:name']).enable(globalSearch !== '' || maxFDR !== '' || maxNOM !== '')
 
-        const numSelectedRows = table.rows({ selected: true }).count()
-        const numAllRows = table.rows().count()
+        const numSelectedRows = table.rows({ selected: true }).indexes().length
+        const numAllRows = table.page.info().recordsTotal
         
-        table.button(['deselectAll:name']).enable(numSelectedRows > 0 || table.columns({ selected: true }).count() > 0)
+        table.button(['deselectAll:name']).enable(numSelectedRows > 0 || table.columns({ selected: true }).indexes().length > 0)
         table.button(['selectAll:name']).enable(numSelectedRows < numAllRows)
     })
 
     // Every time a rows/column has been selected or deselected
     table.on('select deselect', () => {
-        const numAllRows = table.rows().count()
-        const numSelectedRows = table.rows({ selected: true }).count()
-        const numVisibleRows = table.rows({ search: 'applied' }).count()
+        const numAllRows = table.page.info().recordsTotal
+        const numSelectedRows = table.rows({ selected: true }).indexes().length
         const selectedColumns = table.columns({ selected: true })
-        const numSelectedCols = selectedColumns.count()
+        const numSelectedCols = selectedColumns.indexes().length
 
         // Show or hide each top bar button if a specific condition is true
         table.button(['deselectAll:name']).enable(numSelectedRows > 0 || numSelectedCols > 0)
@@ -726,7 +732,7 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
     const maxFDRObj = document.querySelector('#maxFDR')
     const maxNOMObj = document.querySelector('#maxNOM')
 
-    // Hide the FDR q-val and NOM p-val filter (first div containing them) if it's ssGEA or GSVA
+    // Hide the FDR q-val and NOM p-val filter (first div containing them) if it's ssGSEA or GSVA
     // since these two analyses don't have these values
     if (analysisType === 'ssgsea' || analysisType === 'gsva') {
         const filterDiv = maxFDRObj.parentElement.parentElement.parentElement.parentElement
@@ -793,5 +799,3 @@ window.electronAPI.onReceviedData((rawJsonData, analysisType) => {
         }
     }
 })
-
-

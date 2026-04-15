@@ -1,76 +1,62 @@
 {
-    "name": "gseacompass",
-    "version": "1.0.1",
-    "description": "gseacompass",
-    "main": "./main.js",
-    "scripts": {
-        "start": "electron-forge start",
-        "package": "electron-forge package",
-        "make": "electron-forge make"
-    },
-    "author": "Antonino Ciancimino",
-    "license": "MIT",
-    "type": "module",
-    "config": {
-        "forge": {
-            "packagerConfig": {
-                "asar": false,
-                "icon": "icons/compass_1024px.png",
-                "ignore": [
-                    "venv",
-                    "test_data",
-                    "README.md",
-                    "^/build",
-                    "^/backend_src/.*\\.py$"
-                ]
-            },
-            "makers": [
-                {
-                    "name": "@electron-forge/maker-zip",
-                    "platforms": [
-                        "linux"
-                    ]
-                },
-                {
-                    "name": "@electron-forge/maker-rpm",
-                    "config": {
-                        "options": {
-                            "icon": "icons/compass_1024px.png"
-                        }
-                    }
-                },
-                {
-                    "name": "@electron-forge/maker-deb",
-                    "config": {
-                        "options": {
-                            "icon": "icons/compass_1024px.png"
-                        }
-                    }
-                },
-                {
-                    "name": "@electron-forge/maker-squirrel",
-                    "config": {
-                        "name": "gseacompass"
-                    }
-                }
-            ]
+  "name": "gseacompass",
+  "version": "1.0.0",
+  "description": "gseacompass",
+  "main": "./main.js",
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make"
+  },
+  "author": "Antonino Ciancimino",
+  "license": "MIT",
+  "type": "module",
+  "config": {
+    "forge": {
+      "packagerConfig": {
+        "asar": false,
+        "icon": "icons/compass_1024px.png",
+        "ignore": [
+          "venv",
+          "test_data",
+          "README.md",
+          "^/build",
+          "^/backend_src/.*\\.py$"
+        ]
+      },
+      "makers": [
+        {
+          "name": "@electron-forge/maker-zip",
+          "platforms": [
+            "linux"
+          ]
+        },
+        {
+          "name": "@electron-forge/maker-deb",
+          "config": {
+            "options": {
+              "icon": "icons/compass_1024px.png"
+            }
+          }
         }
-    },
-    "devDependencies": {
-        "@electron-forge/cli": "^7.6.0",
-        "@electron-forge/maker-deb": "^7.6.0",
-        "@electron-forge/maker-rpm": "^7.6.0",
-        "@electron-forge/maker-squirrel": "^7.6.0",
-        "@electron-forge/maker-zip": "^7.6.0",
-        "@electron-forge/plugin-auto-unpack-natives": "^7.6.0",
-        "@electron-forge/plugin-fuses": "^7.6.0",
-        "@electron/fuses": "^1.8.0",
-        "electron": "^33.2.1"
-    },
-    "dependencies": {
-        "electron-log": "^5.2.4",
-        "electron-squirrel-startup": "^1.0.1",
-        "fix-path": "^4.0.0",
-        "tmp": "^0.2.3"
+      ]
     }
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.11.1",
+    "@electron-forge/maker-deb": "^7.11.1",
+    "@electron-forge/maker-rpm": "^7.11.1",
+    "@electron-forge/maker-squirrel": "^7.6.0",
+    "@electron-forge/maker-zip": "^7.11.1",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.6.0",
+    "@electron-forge/plugin-fuses": "^7.6.0",
+    "@electron/fuses": "^1.8.0",
+    "electron": "^33.2.1"
+  },
+  "dependencies": {
+    "electron-log": "^5.2.4",
+    "electron-squirrel-startup": "^1.0.1",
+    "fix-path": "^4.0.0",
+    "tmp": "^0.2.3"
+  }
 }

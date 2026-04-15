@@ -91,6 +91,8 @@ const localPath = (type, file) => {
         case 'icon':
             dir = 'icons'
             break
+        case 'database':
+            return join(app.getPath('userData'), file)
         default:
             return ''
     }
@@ -665,7 +667,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
 
     ipcMain.removeAllListeners('request-gene-set-info')
     ipcMain.on('request-gene-set-info', (_event, selectedTerm) => {
-        if (!existsSync(localPath('resource', 'msigdb.db'))) {
+        if (!existsSync(localPath('database', 'msigdb.db'))) {
             dialog.showMessageBox({
                 message: 'The MSigDB file (msigdb.db) wasn\'t found.',
                 type: 'error',
@@ -674,7 +676,7 @@ const createTableWindow = (jsonRawData, analysisType) => {
         } else {
             let pythonProcess = null
 
-            pythonProcess = spawnPythonProcess('gene_set_info', [selectedTerm, localPath('resource', 'msigdb.db')])
+            pythonProcess = spawnPythonProcess('gene_set_info', [selectedTerm, localPath('database', 'msigdb.db')])
 
             let jsonContent = ''
 
@@ -763,12 +765,8 @@ const createUploadMsigdbWindow = () => {
     ipcMain.removeAllListeners('send-msigdb')
     ipcMain.on('send-msigdb', (_event, msigdbPath) => {
 
-        // Create the 'misc_resources' directory inside the app root directory, if it doesn't already exist
-        if (!existsSync(localPath('resource', '')))
-            mkdirSync(localPath('resource', ''))
-
-        // Copy the MsigdDB file inside the app 'misc_resources' directory
-        copyFile(msigdbPath, localPath('resource', 'msigdb.db'), (err) => {
+        // Copy the MsigdDB file into the safe user data directory
+        copyFile(msigdbPath, localPath('database', 'msigdb.db'), (err) => {
             if (err) {
                 error(`\n========================\n
                          Error: The MsgiDB couldn't be copied in the GSEACompss directory. \n
@@ -800,11 +798,11 @@ const menuTemplate = [
         submenu: [{
             label: 'Update MSigDB from local',
             click() {
-                // Delete the current MSigDB file
-                unlink(localPath('resource', 'msigdb.db'), (err) => {
+                // Delete the current MSigDB file from the user data folder
+                unlink(localPath('database', 'msigdb.db'), (err) => {
                     if (err)
                         error(`\n========================\n
-                                 Warning: The file ${localPath('resource', 'msigdb.db')} couldn't be deleted. 
+                                 Warning: The file ${localPath('database', 'msigdb.db')} couldn't be deleted. 
                                \n========================\n`)
                 })
 
@@ -855,13 +853,13 @@ const menuTemplate = [
         ]
     },
     // Uncomment to add a "Toggle Developer Tools" option in the menu (for debugging purposes)
-    // {
-    //     label: 'Toggle Developer Tools',
-    //     click(item, focusedWindow) {
-    //         if (focusedWindow)
-    //             focusedWindow.webContents.toggleDevTools()
-    //     }
-    // }
+    {
+        label: 'Toggle Developer Tools',
+        click(item, focusedWindow) {
+            if (focusedWindow)
+                focusedWindow.webContents.toggleDevTools()
+        }
+    }
 ]
 Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate))
 
@@ -874,7 +872,8 @@ if (require('electron-squirrel-startup'))
 
 app.whenReady().then(() => {
     // If the MSigDB exists, show the main window, otherwise show the upload MSigDB window
-    if (existsSync(localPath('resource', 'msigdb.db')))
+    // Now safely checking the 'database' route in the user directory
+    if (existsSync(localPath('database', 'msigdb.db')))
         createMainWindow()
     else
         createUploadMsigdbWindow()
@@ -901,4 +900,3 @@ app.on('window-all-closed', () => {
         app.quit()
     }
 })
-

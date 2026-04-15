@@ -818,4 +818,3 @@ match plot_type:
         print("The requested plot doesn't exist", file=sys.stderr)
         exit(1)
 
-
