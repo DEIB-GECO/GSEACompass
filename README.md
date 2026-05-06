@@ -7,7 +7,7 @@ To know more about how to use GSEACompass, check out the official user manual: [
 ## Outline
 
 - [Frameworks](#frameworks)
-- [Run instructions](#run-instructions)
+- [Run instructions](#for-users-how-to-)
 - [Build instructions](#build-instructions)
   - [Download](#download)
   - [Dependencies](#dependencies)
@@ -30,11 +30,11 @@ This tool is mostly powered by:
 - *Datatables.js* as a view engine for post-analysis tables
 - *Pyvis* as a view engine for similarity graphs
 
-## Run instructions
+## For USERs - How to run the software
 
-To run GSEACompass, simply download the package required by your OS (Ubuntu-based, Mac, Windows) from the [*Releases*](https://github.com/DEIB-GECO/GSEACompass/releases) page and double click on it.
+To run GSEACompass, download the executable required by your OS (Ubuntu-based, Mac, Windows) from the [*Releases*](https://github.com/DEIB-GECO/GSEACompass/releases) page and double click on it.
 
-## Build instructions
+## For DEVELOPERs - How to buid from source code
 
 ### Download
 
