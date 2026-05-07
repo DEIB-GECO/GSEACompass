@@ -33,6 +33,8 @@ This tool is mostly powered by:
 ## For USERs - How to run the software
 
 To run GSEACompass, download the executable required by your OS (Ubuntu-based, Mac, Windows) from the [*Releases*](https://github.com/DEIB-GECO/GSEACompass/releases) page and double click on it.
+To get familiar with the required input expression formats, example datasets can be retrieved from https://www.gsea-msigdb.org/gsea/datasets.jsp.
+
 
 ## For DEVELOPERs - How to buid from source code
 
