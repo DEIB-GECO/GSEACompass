@@ -7,9 +7,9 @@ To know more about how to use GSEACompass, check out the official user manual: [
 ## Outline
 
 - [Frameworks](#frameworks)
-- [Run instructions](#for-users-how-to-)
-- [Build instructions](#build-instructions)
-  - [Download](#download)
+- [For USERS - How to run the software](#for-users---how-to-run-the-software)
+- [For DEVELOPERs: How to build from source code](#for-developers---how-to-build-from-source-code)
+  - [Download source code](#download-source-code)
   - [Dependencies](#dependencies)
     - [Python](#python)
     - [Node.js](#nodejs)
@@ -37,11 +37,11 @@ To get familiar with the required input expression formats, example datasets can
 
 A detailed guide is available at https://gseacompass.gitbook.io/user-manual.
 
-## For DEVELOPERs - How to buid from source code
+## For DEVELOPERs - How to build from source code
 
-### Download
+### Download source code
 
-Download GSEACompass source code
+Download GSEACompass source code from Github
 
 ### Dependencies
 
