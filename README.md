@@ -4,6 +4,9 @@ A modern app to run GSEA, pre-ranked GSEA, ssGSEA and GSVA and do post-analysis 
 
 To know more about how to use GSEACompass, check out the official user manual: [gseacompass.gitbook.io](https://gseacompass.gitbook.io/user-manual)
 
+If you wish to see how to use GSEACompass on a real use-case, watch the following video.
+[![GSEACompass use case video](readme_assets/video_thumbnail.png)](https://www.youtube.com/watch?v=H2Jo8MZXmUI)
+
 ## Outline
 
 - [Frameworks](#frameworks)
