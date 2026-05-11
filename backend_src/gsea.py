@@ -108,8 +108,8 @@ else:
     if (chip.iloc[:, 0].isnull().any() or chip.index.hasnans):
         errorAndExit("The chip platform file has some missing values and cannot be used.")
                     
-    # Convert the ranked list genes in the chip platform notation
-    expression_set_chosen = expression_set.join(chip).reset_index(drop=True).dropna()
+    # Convert the expression set genes in the chip platform notation
+    expression_set_chosen = expression_set.join(chip).reset_index(drop=True).dropna(subset=["Gene Symbol"]).set_index("Gene Symbol")
     
     # Verify that the gene sets and the expression set have at least 10 genes in common, otherwise exit and print error
     gene_set_genes = set()
@@ -117,7 +117,7 @@ else:
         for line in f:
             parts = line.strip().split("\t")
             gene_set_genes.update(parts[2:])  # Skip the first two columns (gene set name and link)
-    expr_remapped_genes = set(expression_set_chosen["Gene Symbol"])
+    expr_remapped_genes = set(expression_set_chosen.index)
     common_genes = gene_set_genes.intersection(expr_remapped_genes)
     
     if len(common_genes) < 10:

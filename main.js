@@ -853,13 +853,13 @@ const menuTemplate = [
         ]
     },
     // Uncomment to add a "Toggle Developer Tools" option in the menu (for debugging purposes)
-    {
-        label: 'Toggle Developer Tools',
-        click(item, focusedWindow) {
-            if (focusedWindow)
-                focusedWindow.webContents.toggleDevTools()
-        }
-    }
+    // {
+    //     label: 'Toggle Developer Tools',
+    //     click(item, focusedWindow) {
+    //         if (focusedWindow)
+    //             focusedWindow.webContents.toggleDevTools()
+    //     }
+    // }
 ]
 Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate))
 
