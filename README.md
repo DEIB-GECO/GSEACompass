@@ -39,6 +39,17 @@ To run GSEACompass, download the executable required by your OS (Ubuntu-based, M
 
 To get familiar with the required input expression formats, example datasets can be retrieved from [here](https://www.gsea-msigdb.org/gsea/datasets.jsp).
 
+### :exclamation: **For MacOS users**
+
+If a the .dmg prompts a message *"gseacompass" is damaged and cannot be opened*, you can fix it with the following terminal commands:
+```
+xattr -cr "/Applications/gseacompass.app"
+codesign --remove-signature "/Applications/gseacompass.app"
+codesign --force --deep --sign - "/Applications/gseacompass.app"
+open "/Applications/gseacompass.app"
+```
+
+
 ## For DEVELOPERs - How to build from source code
 
 ### Download source code
