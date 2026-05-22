@@ -41,7 +41,9 @@ To get familiar with the required input expression formats, example datasets can
 
 ### :exclamation: **For MacOS users**
 
-If a the .dmg prompts a message *"gseacompass" is damaged and cannot be opened*, you can fix it with the following terminal commands:
+It's possible that once you install the .dmg executable and try to open GSEACompass, you'll receive the prompt message *"gseacompass" is damaged and cannot be opened*. This happens because newer MacOS versions require apps to be signed and notarized ([to know more](https://github.com/electron-userland/electron-builder/issues/8191)). 
+
+You can fix it by launching the following commands on your terminal (to open a terminal: click on the *Launchpad* icon in the Dock, type *Terminal* in the search field, then click Terminal):
 ```
 xattr -cr "/Applications/gseacompass.app"
 codesign --remove-signature "/Applications/gseacompass.app"
