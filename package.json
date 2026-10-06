@@ -26,8 +26,15 @@
       },
       "makers": [
         {
+          "name": "@electron-forge/maker-squirrel",
+          "config": {
+            "name": "gseacompass"
+          }
+        },
+        {
           "name": "@electron-forge/maker-zip",
           "platforms": [
+            "darwin",
             "linux"
           ]
         },
