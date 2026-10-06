@@ -1,0 +1,74 @@
+# This workflow handles the hybrid Node.js (Electron) and Python environment for GSEACompass
+name: Build CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [22.x] # Kept to 1 version to avoid building 9 different artifacts
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # Installs Python C-headers (only needed on Linux)
+    - name: Install system dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-dev
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+
+    - name: Install Python requirements
+      run: |
+        pip install -r requirements.txt
+        pip install pyinstaller
+
+    # Compiles the Python backend scripts. 
+    # Note: On windows-latest, this will output .exe files (e.g. gsea.exe)
+    - name: Build Python Executables
+      shell: bash
+      run: |
+        cd backend_src
+        SCRIPTS=("gene_set_info" "gsea" "gsea_plot" "gsea_preranked" "gsva" "ssgsea")
+        for script in "${SCRIPTS[@]}"; do
+          pyinstaller --noconfirm --distpath dist/backend "${script}.py"
+        done
+
+    - name: Install NPM packages
+      run: npm install
+
+    # Generates the OS-specific distributables (.exe, .dmg, .deb, etc.)
+    - name: Make Electron App
+      run: npm run make
+      
+    - name: Test
+      run: npm test --if-present
+
+    # Uploads the final app installers so you can download them!
+    # Electron Forge puts output binaries into the 'out/make' directory
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: GSEACompass-${{ matrix.os }}
+        path: out/make/**/*
