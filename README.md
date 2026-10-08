@@ -50,7 +50,9 @@ codesign --remove-signature "/Applications/gseacompass.app"
 codesign --force --deep --sign - "/Applications/gseacompass.app"
 open "/Applications/gseacompass.app"
 ```
+### :exclamation: **For Windows users**
 
+*Smart app control* may block GSEACompass installation. If that happens, you can turn it off temporarily and proceed with the installation. N.b.: Smart App Control is a separated application wrt Windows default antivirus. 
 
 ## For DEVELOPERs - How to build from source code
 
