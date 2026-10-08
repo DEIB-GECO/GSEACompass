@@ -1,6 +1,6 @@
 {
   "name": "gseacompass",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "gseacompass",
   "main": "./main.js",
   "scripts": {
@@ -32,11 +32,10 @@
           }
         },
         {
-          "name": "@electron-forge/maker-zip",
-          "platforms": [
-            "darwin",
-            "linux"
-          ]
+          "name": "@electron-forge/maker-dmg",
+          "config": {
+            "icon": "icons/compass_1024px.png"
+          }
         },
         {
           "name": "@electron-forge/maker-deb",
@@ -52,9 +51,9 @@
   "devDependencies": {
     "@electron-forge/cli": "^7.11.1",
     "@electron-forge/maker-deb": "^7.11.1",
+    "@electron-forge/maker-dmg": "^7.11.1",
     "@electron-forge/maker-rpm": "^7.11.1",
     "@electron-forge/maker-squirrel": "^7.6.0",
-    "@electron-forge/maker-zip": "^7.11.1",
     "@electron-forge/plugin-auto-unpack-natives": "^7.6.0",
     "@electron-forge/plugin-fuses": "^7.6.0",
     "@electron/fuses": "^1.8.0",
