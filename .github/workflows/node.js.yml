@@ -1,10 +1,11 @@
-name: Build CI
+name: Build Release
 
 on:
+  workflow_dispatch:
+  
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    tags:
+      - 'v*'
 
 jobs:
   build:
@@ -51,8 +52,7 @@ jobs:
     - name: Make Electron App
       run: npm run make
 
-    # Updated to specifically target only .deb, .dmg, and .exe files
-    - name: Upload Artifacts
+    - name: Upload Installers
       uses: actions/upload-artifact@v4
       with:
         name: GSEACompass-${{ matrix.os }}
