@@ -43,7 +43,7 @@ jobs:
         pip install pyinstaller
 
     - name: Build Python Executables
-      run: pyinstaller pyinstaller.spec --noconfirm
+      run: pyinstaller pyinstaller.spec --noconfirm --distpath backend_src/dist
 
     - name: Install NPM packages
       run: npm install
