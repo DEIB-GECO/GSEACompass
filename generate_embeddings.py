@@ -151,7 +151,7 @@ with open(extracted_filename, "r") as f:
     bs = 128 # batch size during inference
     all_embs = []
     for i in tqdm(np.arange(0, len(all_names), bs)):
-        toks = tokenizer.batch_encode_plus(all_names[i:i+bs],
+        toks = tokenizer.tokenizer(all_names[i:i+bs],
                                            padding="max_length",
                                            max_length=25,
                                            truncation=True,
