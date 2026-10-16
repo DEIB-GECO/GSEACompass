@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+# Generate MSigDB gene-set embeddings using the SapBERT model.
+#
+# This script logs into the GSEA/MSigDB website, downloads the latest Human gene-set
+# SQLite database, extracts the gene-set names, and computes a dense embedding for
+# each gene set using a sentence-transformer model. The resulting dictionary is saved
+# as a pickled file under misc_resources/ for later retrieval.
+
 import os
 import pickle
 import re
@@ -12,18 +20,22 @@ from bs4 import BeautifulSoup
 from tqdm.auto import tqdm
 from transformers import AutoModel, AutoTokenizer
 
+# Email used to authenticate to the MSigDB/GSEA portal.
 EMAIL = "vamevad793@iconcubic.com"
 
+# GSEA login and collection pages used to discover the current Human database archive.
 LOGIN_URL = "https://www.gsea-msigdb.org/gsea/login.jsp"
 COLLECTIONS_URL = "https://www.gsea-msigdb.org/gsea/msigdb/collections.jsp"
 TIMEOUT = (15, 120)
 
+# Reuse a single browser-like session for authentication and downloads.
 session = requests.Session()
 session.headers.update({
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 })
 
 print(f"Logging in with {EMAIL}...")
+# Fetch the login page and submit the form with the configured email address.
 res = session.get(LOGIN_URL, timeout=TIMEOUT)
 res.raise_for_status()
 soup = BeautifulSoup(res.text, "html.parser")
@@ -35,6 +47,7 @@ if not form:
 action = form.get("action", "")
 target_login_url = urljoin(LOGIN_URL, action) if action else LOGIN_URL
 
+# Some login forms use a specific field name for the email, so detect it dynamically.
 email_input = form.find("input", {"type": "text"}) or form.find("input", {"type": "email"})
 input_name = email_input.get("name", "email") if email_input else "email"
 
@@ -52,6 +65,7 @@ if BeautifulSoup(login_response.text, "html.parser").find("form", id="loginForm"
     )
 
 print("Fetching collections page to discover the latest Human SQLite file link...")
+# Use the collections page to discover the link to the newest Human gene-set SQLite package.
 col_response = session.get(COLLECTIONS_URL, timeout=TIMEOUT)
 col_response.raise_for_status()
 
@@ -60,12 +74,13 @@ base_tag = col_soup.find("base", href=True)
 link_base_url = urljoin(col_response.url, base_tag["href"]) if base_tag else col_response.url
 
 download_link = None
-# Matches 'msigdb', followed by anything, then 'Hs', then anything, ending in 'db.zip'
+# Match the archive name pattern for the Human database download.
+# Example: msigdb...Hs...db.zip
 pattern = re.compile(r"msigdb.*Hs.*db\.zip", re.IGNORECASE)
 
 for a_tag in col_soup.find_all("a", href=True):
     href = a_tag["href"]
-    # Check both the link URL and text
+    # Check both the link URL and the visible text in case the href is relative or encoded.
     if pattern.search(href) or pattern.search(a_tag.get_text()):
         download_link = urljoin(link_base_url, href)
         break
@@ -75,6 +90,7 @@ if not download_link:
 
 print(f"Discovered download link: {download_link}")
 
+# Some download URLs include a filePath query parameter; strip it to recover the zip name.
 if "filePath=" in download_link:
     raw_filename = download_link.split("filePath=")[-1].split("&")[0]
     filename = os.path.basename(unquote(raw_filename))
@@ -87,6 +103,7 @@ if not filename or not filename.endswith(".zip"):
 print(f"Starting download: {filename}")
 partial_filename = filename + ".part"
 try:
+    # Stream the archive so the script can validate it before replacing the final file.
     with session.get(download_link, stream=True, timeout=TIMEOUT) as stream_resp:
         stream_resp.raise_for_status()
         content_type = stream_resp.headers.get("content-type", "").lower()
@@ -109,6 +126,7 @@ try:
                     else:
                         print(f"\rDownloaded: {downloaded / (1024*1024):.2f} MB", end="")
 
+    # Ensure the file we downloaded is a real ZIP archive before moving it into place.
     if not zipfile.is_zipfile(partial_filename):
         raise RuntimeError(
             f"Downloaded {downloaded} bytes, but the response is not a valid ZIP archive. "
@@ -116,39 +134,43 @@ try:
         )
     os.replace(partial_filename, filename)
 finally:
+    # Clean up the temporary partial file if it is still present.
     if os.path.exists(partial_filename):
         os.remove(partial_filename)
 
 print(f"\nDownload finished successfully: {filename}")
 
-# Unzip the downloaded file
+# Unzip the downloaded file to get the SQLite database used for gene-set metadata.
 with zipfile.ZipFile(filename, "r") as zip_ref:
     zip_ref.extractall()
 
-# Delete the zip file
+# Remove the archive now that the database has been extracted.
 os.remove(filename)
 
-# Open the extracted file
+# Open the extracted file and inspect the gene-set names stored in the SQLite table.
 extracted_filename = os.path.basename(zip_ref.namelist()[0])
 print(f"Extracted filename: {extracted_filename}")
 
 with open(extracted_filename, "r") as f:
-    # read as sqlite database
+    # The extracted file is a SQLite database containing one row per gene set.
     conn = sqlite3.connect(extracted_filename)
     cursor = conn.cursor()
     cursor.execute("SELECT standard_name FROM gene_set")
     rows = cursor.fetchall()
 
-    # convert rows to a list of strings
+    # Convert rows to a flat list of gene-set names used as textual input to the model.
     all_names = [row[0] for row in rows]
     print(f"Number of geneset: {len(all_names)}")
 
+    # Use CUDA if available; otherwise, fall back to CPU.
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+    # Load the biomedical sentence-transformer used to embed gene-set names.
     tokenizer = AutoTokenizer.from_pretrained("cambridgeltl/SapBERT-from-PubMedBERT-fulltext")
     model = AutoModel.from_pretrained("cambridgeltl/SapBERT-from-PubMedBERT-fulltext").to(device)
 
-    bs = 128 # batch size during inference
+    # Run inference in batches to keep memory usage manageable.
+    bs = 128  # batch size during inference
     all_embs = []
     for i in tqdm(np.arange(0, len(all_names), bs)):
         toks = tokenizer(all_names[i:i+bs],
@@ -157,17 +179,19 @@ with open(extracted_filename, "r") as f:
                          truncation=True,
                          return_tensors="pt")
         toks_device = {}
-        for k,v in toks.items():
+        for k, v in toks.items():
             toks_device[k] = v.to(device)
-        cls_rep = model(**toks_device)[0][:,0,:] # use CLS representation as the embedding
+        # Use the CLS representation as the gene-set embedding for each batch.
+        cls_rep = model(**toks_device)[0][:, 0, :]  # use CLS representation as the embedding
         all_embs.append(cls_rep.cpu().detach().numpy())
 
+    # Concatenate the per-batch embeddings into a single NumPy array.
     all_embs = np.concatenate(all_embs, axis=0)
 
-    # Create dictionary mapping gene names to embeddings
+    # Create dictionary mapping gene-set names to their embeddings.
     name_to_emb = {name: emb for name, emb in zip(all_names, all_embs)}
 
-    # Save dictionary to disk
+    # Save dictionary to disk so it can be reused without recomputing embeddings.
     output_dir = "misc_resources"
     os.makedirs(output_dir, exist_ok=True)
 
