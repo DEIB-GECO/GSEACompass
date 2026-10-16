@@ -151,11 +151,11 @@ with open(extracted_filename, "r") as f:
     bs = 128 # batch size during inference
     all_embs = []
     for i in tqdm(np.arange(0, len(all_names), bs)):
-        toks = tokenizer.tokenizer(all_names[i:i+bs],
-                                           padding="max_length",
-                                           max_length=25,
-                                           truncation=True,
-                                           return_tensors="pt")
+        toks = tokenizer(all_names[i:i+bs],
+                         padding="max_length",
+                         max_length=25,
+                         truncation=True,
+                         return_tensors="pt")
         toks_device = {}
         for k,v in toks.items():
             toks_device[k] = v.to(device)
