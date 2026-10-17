@@ -22,7 +22,7 @@ If you wish to see how to use GSEACompass on a real use-case, watch the followin
       - [Ubuntu-based](#ubuntu-based)
       - [Fedora/RHEL](#fedorarhel)
       - [Windows](#windows)
-    - [GitHub Actions](#github-actions)
+  - [GitHub Actions](#github-actions)
   - [Build and run](#build-and-run)
 
 ## Frameworks
