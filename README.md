@@ -22,6 +22,7 @@ If you wish to see how to use GSEACompass on a real use-case, watch the followin
       - [Ubuntu-based](#ubuntu-based)
       - [Fedora/RHEL](#fedorarhel)
       - [Windows](#windows)
+    - [GitHub Actions](#github-actions)
   - [Build and run](#build-and-run)
 
 ## Frameworks
@@ -52,7 +53,8 @@ open "/Applications/gseacompass.app"
 ```
 ### :exclamation: **For Windows users**
 
-*Smart app control* may block GSEACompass installation. If that happens, you can turn it off temporarily and proceed with the installation. N.b.: Smart App Control is a separated application wrt Windows default antivirus. 
+*Smart app control* may block GSEACompass installation. If that happens, you can turn it off temporarily and proceed with the installation. 
+Mind that Smart App Control is a separated application with respect to Windows default antivirus. 
 
 ## For DEVELOPERs - How to build from source code
 
@@ -116,6 +118,11 @@ sudo dnf install libquadmath libquadmath-devel
 ##### Windows
 
 Make sure that Python is in the PATH environment variable.
+
+### GitHub Actions
+We have included two GitHub action files in this repository.
+- *build_package.yml*: To build and package GSEACompass with the current state of the codebase.
+- *generate_embeddings.yml*: To generate a new embedding table ([msigdb\_embeddings.pkl](https://github.com/DEIB-GECO/GSEACompass/tree/main/misc_resources)) from the gene sets of the latest Molecular Signature Database available on the Broad Institute website.
 
 ### Build and run
 
